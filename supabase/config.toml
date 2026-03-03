@@ -1,0 +1,4 @@
+project_id = "gzkdweqzglgveryoosgz"
+
+[functions.index-drive]
+verify_jwt = false
