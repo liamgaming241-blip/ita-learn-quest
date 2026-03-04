@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useSubjects, useTopics, useLessons } from "@/hooks/useSubjects";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, BookOpen, FileText, Video, File } from "lucide-react";
+import { ArrowLeft, BookOpen, FileText, Video, File, X } from "lucide-react";
+import { VideoPlayer } from "@/components/VideoPlayer";
+import { supabase } from "@/integrations/supabase/client";
 
 const fileTypeIcon = (type: string) => {
   if (["mp4", "mov", "mkv", "youtube"].includes(type)) return <Video className="h-4 w-4" />;
@@ -20,13 +22,65 @@ const statusColor = (status: string) => {
   }
 };
 
+const isVideo = (type: string) => ["mp4", "mov", "mkv"].includes(type);
+
+interface Lesson {
+  id: string;
+  title: string;
+  file_type: string;
+  file_url: string | null;
+  drive_file_id: string | null;
+  processing_status: string;
+}
+
 const Subjects = () => {
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
+  const [activeLesson, setActiveLesson] = useState<Lesson | null>(null);
   const { data: subjects, isLoading: loadingSubjects } = useSubjects();
   const { data: topics } = useTopics(selectedSubject ?? undefined);
   const { data: lessons } = useLessons(selectedTopic ?? undefined);
 
+  // Build video src from Drive or direct URL
+  const getVideoSrc = (lesson: Lesson) => {
+    if (lesson.file_url) return lesson.file_url;
+    if (lesson.drive_file_id) {
+      return `https://www.googleapis.com/drive/v3/files/${lesson.drive_file_id}?alt=media&key=${import.meta.env.VITE_GOOGLE_DRIVE_API_KEY ?? ""}`;
+    }
+    return "";
+  };
+
+  const getPdfSrc = (lesson: Lesson) => {
+    if (lesson.file_url) return lesson.file_url;
+    if (lesson.drive_file_id) {
+      return `https://drive.google.com/file/d/${lesson.drive_file_id}/preview`;
+    }
+    return "";
+  };
+
+  // Lesson viewer
+  if (activeLesson) {
+    const src = isVideo(activeLesson.file_type) ? getVideoSrc(activeLesson) : getPdfSrc(activeLesson);
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={() => setActiveLesson(null)}>
+            <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+          </Button>
+          <h1 className="text-xl font-bold truncate flex-1">{activeLesson.title}</h1>
+        </div>
+        {isVideo(activeLesson.file_type) ? (
+          <VideoPlayer src={src} title={activeLesson.title} className="aspect-video w-full max-h-[70vh]" />
+        ) : activeLesson.file_type === "pdf" ? (
+          <iframe src={src} className="w-full rounded-lg border border-border" style={{ height: "75vh" }} title={activeLesson.title} />
+        ) : (
+          <Card className="glass"><CardContent className="p-8 text-center text-muted-foreground">Visualização não disponível para este tipo de arquivo.</CardContent></Card>
+        )}
+      </div>
+    );
+  }
+
+  // Lessons list
   if (selectedTopic && selectedSubject) {
     const topic = topics?.find((t) => t.id === selectedTopic);
     return (
@@ -38,7 +92,11 @@ const Subjects = () => {
         {!lessons?.length && <p className="text-muted-foreground">Nenhuma aula encontrada.</p>}
         <div className="space-y-2">
           {lessons?.map((l) => (
-            <Card key={l.id} className="glass">
+            <Card
+              key={l.id}
+              className="glass hover:shadow-md transition-shadow cursor-pointer"
+              onClick={() => setActiveLesson(l as any)}
+            >
               <CardContent className="flex items-center gap-4 p-4">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
                   {fileTypeIcon(l.file_type)}
@@ -56,6 +114,7 @@ const Subjects = () => {
     );
   }
 
+  // Topics list
   if (selectedSubject) {
     const subject = subjects?.find((s) => s.id === selectedSubject);
     return (
@@ -79,6 +138,7 @@ const Subjects = () => {
     );
   }
 
+  // Subjects list
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold">Matérias</h1>
