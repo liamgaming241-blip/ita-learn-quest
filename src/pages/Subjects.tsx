@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useSubjects, useTopics, useLessons } from "@/hooks/useSubjects";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, BookOpen, FileText, Video, File } from "lucide-react";
+import { ArrowLeft, BookOpen, FileText, Video, File, X } from "lucide-react";
+import { VideoPlayer } from "@/components/VideoPlayer";
 
 const fileTypeIcon = (type: string) => {
   if (["mp4", "mov", "mkv", "youtube"].includes(type)) return <Video className="h-4 w-4" />;
@@ -13,20 +14,70 @@ const fileTypeIcon = (type: string) => {
 
 const statusColor = (status: string) => {
   switch (status) {
-    case "completed": return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
-    case "processing": return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400";
-    case "failed": return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
+    case "completed": return "bg-success/10 text-success";
+    case "processing": return "bg-warning/10 text-warning";
+    case "failed": return "bg-destructive/10 text-destructive";
     default: return "bg-muted text-muted-foreground";
   }
 };
 
+const isVideo = (type: string) => ["mp4", "mov", "mkv"].includes(type);
+
 const Subjects = () => {
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
+  const [activeLesson, setActiveLesson] = useState<any>(null);
   const { data: subjects, isLoading: loadingSubjects } = useSubjects();
   const { data: topics } = useTopics(selectedSubject ?? undefined);
   const { data: lessons } = useLessons(selectedTopic ?? undefined);
 
+  // Lesson detail with video player
+  if (activeLesson) {
+    return (
+      <div className="space-y-4">
+        <Button variant="ghost" size="sm" onClick={() => setActiveLesson(null)}>
+          <ArrowLeft className="mr-2 h-4 w-4" /> Voltar às Aulas
+        </Button>
+        <h1 className="text-2xl font-bold">{activeLesson.title}</h1>
+        {isVideo(activeLesson.file_type) && activeLesson.file_url ? (
+          <VideoPlayer
+            src={activeLesson.file_url}
+            title={activeLesson.title}
+            className="aspect-video max-h-[70vh]"
+          />
+        ) : isVideo(activeLesson.file_type) ? (
+          <Card className="glass">
+            <CardContent className="p-8 text-center text-muted-foreground">
+              <Video className="mx-auto mb-3 h-12 w-12 opacity-40" />
+              <p>Vídeo não disponível para streaming.</p>
+              <p className="text-xs mt-1">O arquivo precisa ter uma URL pública para reprodução.</p>
+            </CardContent>
+          </Card>
+        ) : activeLesson.file_type === "pdf" && activeLesson.file_url ? (
+          <iframe
+            src={activeLesson.file_url}
+            className="w-full h-[70vh] rounded-lg border border-border"
+            title={activeLesson.title}
+          />
+        ) : (
+          <Card className="glass">
+            <CardContent className="p-8 text-center text-muted-foreground">
+              <File className="mx-auto mb-3 h-12 w-12 opacity-40" />
+              <p>Visualização não disponível para este tipo de arquivo.</p>
+            </CardContent>
+          </Card>
+        )}
+        <div className="flex items-center gap-3">
+          <Badge className={statusColor(activeLesson.processing_status)}>
+            {activeLesson.processing_status}
+          </Badge>
+          <span className="text-xs text-muted-foreground uppercase">{activeLesson.file_type}</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Lessons list
   if (selectedTopic && selectedSubject) {
     const topic = topics?.find((t) => t.id === selectedTopic);
     return (
@@ -38,7 +89,11 @@ const Subjects = () => {
         {!lessons?.length && <p className="text-muted-foreground">Nenhuma aula encontrada.</p>}
         <div className="space-y-2">
           {lessons?.map((l) => (
-            <Card key={l.id} className="glass">
+            <Card
+              key={l.id}
+              className="glass hover:shadow-md transition-shadow cursor-pointer"
+              onClick={() => setActiveLesson(l)}
+            >
               <CardContent className="flex items-center gap-4 p-4">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
                   {fileTypeIcon(l.file_type)}
@@ -56,6 +111,7 @@ const Subjects = () => {
     );
   }
 
+  // Topics list
   if (selectedSubject) {
     const subject = subjects?.find((s) => s.id === selectedSubject);
     return (
@@ -79,6 +135,7 @@ const Subjects = () => {
     );
   }
 
+  // Subjects list
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold">Matérias</h1>
