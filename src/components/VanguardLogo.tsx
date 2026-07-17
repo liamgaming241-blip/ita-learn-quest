@@ -1,48 +1,54 @@
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
+import mark from "@/assets/vanguard-mark.png.asset.json";
 
 interface VanguardLogoProps {
   className?: string;
   showWordmark?: boolean;
   size?: number;
+  animated?: boolean;
 }
 
-export const VanguardLogo = ({ className, showWordmark = true, size = 32 }: VanguardLogoProps) => {
+export const VanguardLogo = ({
+  className,
+  showWordmark = true,
+  size = 36,
+  animated = true,
+}: VanguardLogoProps) => {
+  const MotionWrap = animated ? motion.div : "div";
+
   return (
-    <div className={cn("flex items-center gap-2.5", className)}>
-      <svg
-        width={size}
-        height={size}
-        viewBox="0 0 40 40"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        aria-hidden="true"
-        className="shrink-0"
+    <div className={cn("flex items-center gap-3", className)}>
+      <MotionWrap
+        {...(animated
+          ? {
+              initial: { opacity: 0, scale: 0.85, rotate: -6 },
+              animate: { opacity: 1, scale: 1, rotate: 0 },
+              transition: { type: "spring", stiffness: 220, damping: 18 },
+              whileHover: { scale: 1.06, rotate: 2 },
+            }
+          : {})}
+        className="relative shrink-0"
+        style={{ width: size, height: size }}
       >
-        <rect x="1" y="1" width="38" height="38" rx="9" stroke="hsl(var(--accent))" strokeWidth="1.25" opacity="0.35" />
-        <path
-          d="M11 27L20 12L29 27"
-          stroke="hsl(var(--accent))"
-          strokeWidth="2.25"
-          strokeLinecap="round"
-          strokeLinejoin="round"
+        <div className="absolute inset-0 rounded-[10px] bg-accent/20 blur-md opacity-70" />
+        <img
+          src={mark.url}
+          alt="VANGUARD"
+          width={size}
+          height={size}
+          className="relative h-full w-full rounded-[10px] object-cover shadow-gold"
+          loading="eager"
+          decoding="async"
         />
-        <path
-          d="M16 27L20 20L24 27"
-          stroke="hsl(var(--primary-foreground))"
-          strokeWidth="1.75"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          opacity="0.9"
-        />
-        <circle cx="20" cy="32.5" r="1.25" fill="hsl(var(--accent))" />
-      </svg>
+      </MotionWrap>
       {showWordmark && (
         <div className="flex flex-col leading-none">
-          <span className="font-display font-extrabold text-[15px] tracking-[0.14em] text-sidebar-primary-foreground">
+          <span className="font-display font-extrabold text-[17px] tracking-[0.16em] text-sidebar-primary-foreground">
             VANGUARD
           </span>
-          <span className="text-[9px] uppercase tracking-[0.28em] text-sidebar-primary/80 mt-0.5">
-            ITA · IME
+          <span className="text-[9px] uppercase tracking-[0.24em] text-accent/80 mt-1">
+            À frente da aprovação
           </span>
         </div>
       )}
