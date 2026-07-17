@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -50,35 +51,73 @@ const Auth = () => {
 
   return (
     <div className="flex min-h-screen bg-background">
+      {/* LEFT — brand panel */}
       <div className="hidden lg:flex lg:w-[55%] relative overflow-hidden gradient-hero">
         <div className="absolute inset-0 bg-grid opacity-[0.08]" />
-        <div className="absolute -top-32 -right-32 h-96 w-96 rounded-full bg-accent/10 blur-3xl" />
-        <div className="absolute -bottom-24 -left-24 h-80 w-80 rounded-full bg-primary/40 blur-3xl" />
+        <motion.div
+          aria-hidden
+          className="absolute -top-32 -right-32 h-96 w-96 rounded-full bg-accent/12 blur-3xl"
+          animate={{ scale: [1, 1.15, 1], opacity: [0.5, 0.8, 0.5] }}
+          transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div
+          aria-hidden
+          className="absolute -bottom-24 -left-24 h-80 w-80 rounded-full bg-primary/40 blur-3xl"
+          animate={{ scale: [1.1, 1, 1.1], opacity: [0.4, 0.65, 0.4] }}
+          transition={{ duration: 11, repeat: Infinity, ease: "easeInOut" }}
+        />
 
         <div className="relative z-10 flex flex-col justify-between p-12 xl:p-16 w-full text-primary-foreground">
           <VanguardLogo />
 
           <div className="max-w-lg">
-            <div className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-accent">
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15, duration: 0.5 }}
+              className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-accent"
+            >
               <Sparkles className="h-3 w-3" /> Elite prep intelligence
-            </div>
-            <h1 className="mt-6 font-display font-extrabold text-5xl xl:text-6xl leading-[1.02]">
+            </motion.div>
+            <motion.h1
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25, duration: 0.7, ease: [0.22, 1, 0.36, 1] as const }}
+              className="mt-6 font-display font-extrabold text-5xl xl:text-6xl leading-[1.02]"
+            >
               À frente da <span className="text-gold">aprovação</span>.
-            </h1>
-            <p className="mt-5 text-lg text-primary-foreground/70 leading-relaxed">
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.45, duration: 0.6 }}
+              className="mt-5 text-lg text-primary-foreground/70 leading-relaxed"
+            >
               A plataforma premium de inteligência de estudos para candidatos ao ITA e IME. Precisão, disciplina e dados a cada movimento.
-            </p>
+            </motion.p>
 
-            <div className="mt-10 space-y-4">
+            <motion.div
+              initial="hidden"
+              animate="show"
+              variants={{ hidden: {}, show: { transition: { staggerChildren: 0.1, delayChildren: 0.55 } } }}
+              className="mt-10 space-y-4"
+            >
               {missionPoints.map(({ icon: Icon, text }) => (
-                <div key={text} className="flex items-center gap-3">
+                <motion.div
+                  key={text}
+                  variants={{
+                    hidden: { opacity: 0, x: -12 },
+                    show: { opacity: 1, x: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as const } },
+                  }}
+                  className="flex items-center gap-3"
+                >
                   <div className="h-10 w-10 shrink-0 rounded-lg border border-accent/25 bg-accent/10 flex items-center justify-center">
                     <Icon className="h-4 w-4 text-accent" />
                   </div>
                   <span className="text-sm text-primary-foreground/85">{text}</span>
-                </div>
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           </div>
 
           <div className="flex items-center gap-6 text-[11px] text-primary-foreground/40 font-mono uppercase tracking-[0.18em]">
@@ -89,8 +128,14 @@ const Auth = () => {
         </div>
       </div>
 
+      {/* RIGHT — form */}
       <div className="flex flex-1 items-center justify-center p-5 sm:p-10">
-        <div className="w-full max-w-md space-y-8">
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] as const }}
+          className="w-full max-w-md space-y-8"
+        >
           <div className="lg:hidden">
             <VanguardLogo />
           </div>
@@ -113,7 +158,12 @@ const Auth = () => {
             <CardContent className="p-6">
               <form onSubmit={handleSubmit} className="space-y-3.5">
                 {!isLogin && (
-                  <div className="space-y-1.5">
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    transition={{ duration: 0.3 }}
+                    className="space-y-1.5 overflow-hidden"
+                  >
                     <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Nome</label>
                     <Input
                       placeholder="Como devemos te chamar"
@@ -121,9 +171,9 @@ const Auth = () => {
                       onChange={(e) => setDisplayName(e.target.value)}
                       required={!isLogin}
                       autoComplete="name"
-                      className="h-11"
+                      className="h-11 focus-visible:ring-accent"
                     />
-                  </div>
+                  </motion.div>
                 )}
                 <div className="space-y-1.5">
                   <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Email</label>
@@ -134,7 +184,7 @@ const Auth = () => {
                     onChange={(e) => setEmail(e.target.value)}
                     required
                     autoComplete="email"
-                    className="h-11"
+                    className="h-11 focus-visible:ring-accent"
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -147,23 +197,30 @@ const Auth = () => {
                     required
                     minLength={6}
                     autoComplete={isLogin ? "current-password" : "new-password"}
-                    className="h-11"
+                    className="h-11 focus-visible:ring-accent"
                   />
                 </div>
 
                 <Button
                   type="submit"
-                  className="w-full h-11 gradient-gold text-accent-foreground shadow-gold font-semibold hover:opacity-90"
+                  className="w-full h-11 gradient-gold text-accent-foreground shadow-gold font-semibold hover:opacity-95 hover:scale-[1.02]"
                   disabled={loading}
                 >
-                  {loading ? "Autenticando..." : isLogin ? "Entrar na base" : "Criar conta"}
+                  {loading ? (
+                    <motion.span
+                      animate={{ opacity: [0.4, 1, 0.4] }}
+                      transition={{ duration: 1.2, repeat: Infinity }}
+                    >
+                      Autenticando…
+                    </motion.span>
+                  ) : isLogin ? "Entrar na base" : "Criar conta"}
                 </Button>
               </form>
 
               <div className="mt-5 text-center">
                 <button
                   onClick={() => { setIsLogin(!isLogin); setDisplayName(""); }}
-                  className="text-sm text-muted-foreground hover:text-accent transition-colors"
+                  className="text-sm text-muted-foreground hover:text-accent"
                 >
                   {isLogin ? "Ainda não é cadete? Crie sua conta →" : "← Já tem acesso? Entre"}
                 </button>
@@ -174,7 +231,7 @@ const Auth = () => {
           <p className="text-[11px] text-center text-muted-foreground/70">
             Ao continuar você aceita nossos termos e política de privacidade.
           </p>
-        </div>
+        </motion.div>
       </div>
     </div>
   );
