@@ -82,7 +82,7 @@ const Auth = () => {
             <motion.h1
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.25, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ delay: 0.25, duration: 0.7, ease: [0.22, 1, 0.36, 1] as const }}
               className="mt-6 font-display font-extrabold text-5xl xl:text-6xl leading-[1.02]"
             >
               À frente da <span className="text-gold">aprovação</span>.
@@ -107,7 +107,7 @@ const Auth = () => {
                   key={text}
                   variants={{
                     hidden: { opacity: 0, x: -12 },
-                    show: { opacity: 1, x: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
+                    show: { opacity: 1, x: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as const } },
                   }}
                   className="flex items-center gap-3"
                 >
@@ -133,7 +133,7 @@ const Auth = () => {
         <motion.div
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] as const }}
           className="w-full max-w-md space-y-8"
         >
           <div className="lg:hidden">

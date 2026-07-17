@@ -22,7 +22,7 @@ const container = {
 };
 const item = {
   hidden: { opacity: 0, y: 14 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
+  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as const } },
 };
 
 function useCountUp(target: number, duration = 900) {
@@ -121,7 +121,7 @@ const Dashboard = () => {
             <motion.h1
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.28, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ delay: 0.28, duration: 0.55, ease: [0.22, 1, 0.36, 1] as const }}
               className="mt-4 font-display font-extrabold text-3xl sm:text-4xl leading-[1.05] text-primary-foreground"
             >
               Bom retorno, <span className="text-gold">{displayName}</span>.
@@ -156,7 +156,7 @@ const Dashboard = () => {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.35, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ delay: 0.35, duration: 0.6, ease: [0.22, 1, 0.36, 1] as const }}
             className="rounded-2xl border border-border/30 bg-card/10 backdrop-blur-md p-5 sm:p-6 glow-accent"
           >
             <div className="flex items-center justify-between mb-4">
@@ -178,7 +178,7 @@ const Dashboard = () => {
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${approvalReadiness}%` }}
-                transition={{ delay: 0.5, duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
+                transition={{ delay: 0.5, duration: 1.1, ease: [0.22, 1, 0.36, 1] as const }}
                 className="h-full bg-gradient-to-r from-accent to-accent/60"
               />
             </div>
@@ -197,7 +197,7 @@ const Dashboard = () => {
             key={label}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 + i * 0.06, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ delay: 0.1 + i * 0.06, duration: 0.5, ease: [0.22, 1, 0.36, 1] as const }}
             whileHover={{ y: -3 }}
           >
             <Card className="surface border-border/60 h-full">
@@ -247,7 +247,7 @@ const Dashboard = () => {
                         <motion.div
                           initial={{ height: 0 }}
                           animate={{ height: `${Math.max(6, value)}%` }}
-                          transition={{ delay: 0.2 + i * 0.05, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                          transition={{ delay: 0.2 + i * 0.05, duration: 0.7, ease: [0.22, 1, 0.36, 1] as const }}
                           className={cn(
                             "w-full rounded-t",
                             value > 0 ? "bg-gradient-to-t from-accent/60 to-accent" : "bg-muted"
@@ -373,7 +373,7 @@ const Dashboard = () => {
                         <motion.div
                           initial={{ width: 0 }}
                           animate={{ width: `${accuracy}%` }}
-                          transition={{ delay: 0.2 + i * 0.06, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+                          transition={{ delay: 0.2 + i * 0.06, duration: 0.8, ease: [0.22, 1, 0.36, 1] as const }}
                           className="h-full bg-accent"
                         />
                       </div>
@@ -429,7 +429,7 @@ const Dashboard = () => {
                 key={s.id}
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                transition={{ delay: i * 0.05, duration: 0.4, ease: [0.22, 1, 0.36, 1] as const }}
                 whileHover={{ y: -4 }}
               >
                 <Link to="/subjects">
