@@ -10,7 +10,6 @@ export const useSubjects = () => {
       const { data, error } = await supabase
         .from("subjects")
         .select("*, topics(count)")
-        .eq("user_id", user!.id)
         .order("sort_order");
       if (error) throw error;
       return data;
@@ -28,7 +27,6 @@ export const useTopics = (subjectId?: string) => {
         .from("topics")
         .select("*, lessons(count)")
         .eq("subject_id", subjectId!)
-        .eq("user_id", user!.id)
         .order("sort_order");
       if (error) throw error;
       return data;
@@ -46,7 +44,6 @@ export const useLessons = (topicId?: string) => {
         .from("lessons")
         .select("*")
         .eq("topic_id", topicId!)
-        .eq("user_id", user!.id)
         .order("created_at");
       if (error) throw error;
       return data;
@@ -62,8 +59,7 @@ export const useQuestions = (filters?: { subjectId?: string; topicId?: string })
     queryFn: async () => {
       let query = supabase
         .from("questions")
-        .select("*, subjects(name), topics(name)")
-        .eq("user_id", user!.id);
+        .select("*, subjects(name), topics(name)");
       if (filters?.subjectId) query = query.eq("subject_id", filters.subjectId);
       if (filters?.topicId) query = query.eq("topic_id", filters.topicId);
       const { data, error } = await query.order("created_at", { ascending: false });
@@ -132,7 +128,6 @@ export const useIndexingJobs = () => {
       const { data, error } = await supabase
         .from("indexing_jobs")
         .select("*")
-        .eq("user_id", user!.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
