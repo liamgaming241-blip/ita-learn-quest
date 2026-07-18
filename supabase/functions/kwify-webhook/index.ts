@@ -48,9 +48,10 @@ Deno.serve(async (req) => {
   let payload: any = {};
   try { payload = JSON.parse(raw); } catch { /* accept form-ish */ }
 
-  const event: string = (payload.event || payload.type || payload.status || "").toString().toLowerCase();
+  const rawEvent: string = (payload.event || payload.type || payload.status || payload.event_name || "").toString().toLowerCase();
+  const event = rawEvent.replace(/[\s_-]+/g, ".");
   const customer = payload.customer || payload.buyer || payload.data?.customer || {};
-  const email: string | undefined = (payload.email || customer.email || payload.data?.email || "").toString().toLowerCase() || undefined;
+  const email: string | undefined = (payload.email || customer.email || payload.data?.email || payload.Customer?.email || "").toString().trim().toLowerCase() || undefined;
   const kwifyCustomerId = payload.customer_id || customer.id || null;
   const kwifyOrderId = payload.order_id || payload.transaction_id || payload.data?.order_id || null;
   const kwifySubId = payload.subscription_id || payload.data?.subscription_id || null;
@@ -62,9 +63,10 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ error: "missing email" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 
-  const APPROVED = ["purchase.approved", "order.approved", "approved", "paid", "purchase_approved"];
-  const RENEWED = ["subscription.renewed", "renewed", "renewal"];
-  const CANCELED = ["subscription.canceled", "canceled", "refund.approved", "refunded", "chargeback"];
+  const isApproved = /approved|paid|completed|purchase\.complete|order\.complete/.test(event);
+  const isRenewed = /renew/.test(event);
+  const isCanceled = /cancel|refund|chargeback|expired|failed/.test(event);
+  const isActivating = isApproved || isRenewed;
 
   // Upsert license
   const { data: license } = await supabase
@@ -73,13 +75,13 @@ Deno.serve(async (req) => {
       email,
       kwify_customer_id: kwifyCustomerId,
       product_code: productCode,
-      status: CANCELED.includes(event) ? "inactive" : "active",
+      status: isCanceled ? "inactive" : "active",
     }, { onConflict: "email" })
     .select()
     .single();
 
   if (license) {
-    if (APPROVED.includes(event) || RENEWED.includes(event)) {
+    if (isActivating) {
       const periodEnd = new Date();
       periodEnd.setMonth(periodEnd.getMonth() + 1);
 
@@ -115,7 +117,7 @@ Deno.serve(async (req) => {
           renewed_at: new Date().toISOString(),
         });
       }
-    } else if (CANCELED.includes(event)) {
+    } else if (isCanceled) {
       await supabase.from("subscriptions")
         .update({ status: "canceled", canceled_at: new Date().toISOString() })
         .eq("license_id", license.id);
