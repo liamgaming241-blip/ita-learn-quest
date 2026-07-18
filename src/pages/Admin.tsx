@@ -17,7 +17,6 @@ const Admin = () => {
   const [folderId, setFolderId] = useState("");
   const [syncing, setSyncing] = useState(false);
   const [newLicenseEmail, setNewLicenseEmail] = useState("");
-  const [promoteEmail, setPromoteEmail] = useState("");
 
   const load = async () => {
     const [{ data: r }, { data: q }, { data: s }, { data: l }] = await Promise.all([
@@ -71,14 +70,6 @@ const Admin = () => {
     const next = lic.status === "active" ? "inactive" : "active";
     const { error } = await supabase.from("licenses").update({ status: next }).eq("id", lic.id);
     if (error) toast.error(error.message); else { toast.success(`Licença ${next}`); await load(); }
-  };
-
-  const promoteAdmin = async () => {
-    const email = promoteEmail.trim().toLowerCase();
-    if (!email) return;
-    // Look up user in profiles by matching email via auth join is not exposed; instead insert by user_id after admin fills UUID.
-    // Simpler: use RPC path — call server helper. For now instruct via profile lookup.
-    toast.info("Peça ao usuário fazer login primeiro; depois use o SQL para promover pelo user_id.");
   };
 
   return (
