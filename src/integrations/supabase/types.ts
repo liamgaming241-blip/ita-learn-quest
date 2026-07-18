@@ -14,6 +14,111 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_settings: {
+        Row: {
+          content_root_folder_id: string | null
+          google_sheets_id: string | null
+          id: boolean
+          last_sync_completed_at: string | null
+          last_sync_started_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          content_root_folder_id?: string | null
+          google_sheets_id?: string | null
+          id?: boolean
+          last_sync_completed_at?: string | null
+          last_sync_started_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          content_root_folder_id?: string | null
+          google_sheets_id?: string | null
+          id?: boolean
+          last_sync_completed_at?: string | null
+          last_sync_started_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      drive_files: {
+        Row: {
+          created_at: string
+          drive_file_id: string
+          id: string
+          last_seen_at: string
+          md5_checksum: string | null
+          mime_type: string
+          modified_time: string | null
+          name: string
+          parent_id: string | null
+          path: string | null
+          size: number | null
+          status: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          drive_file_id: string
+          id?: string
+          last_seen_at?: string
+          md5_checksum?: string | null
+          mime_type: string
+          modified_time?: string | null
+          name: string
+          parent_id?: string | null
+          path?: string | null
+          size?: number | null
+          status?: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          drive_file_id?: string
+          id?: string
+          last_seen_at?: string
+          md5_checksum?: string | null
+          mime_type?: string
+          modified_time?: string | null
+          name?: string
+          parent_id?: string | null
+          path?: string | null
+          size?: number | null
+          status?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: []
+      }
+      file_versions: {
+        Row: {
+          changed_at: string
+          drive_file_id: string
+          id: string
+          previous_md5: string | null
+          previous_modified_time: string | null
+          previous_size: number | null
+        }
+        Insert: {
+          changed_at?: string
+          drive_file_id: string
+          id?: string
+          previous_md5?: string | null
+          previous_modified_time?: string | null
+          previous_size?: number | null
+        }
+        Update: {
+          changed_at?: string
+          drive_file_id?: string
+          id?: string
+          previous_md5?: string | null
+          previous_modified_time?: string | null
+          previous_size?: number | null
+        }
+        Relationships: []
+      }
       indexing_jobs: {
         Row: {
           completed_at: string | null
@@ -63,6 +168,7 @@ export type Database = {
         Row: {
           created_at: string
           drive_file_id: string | null
+          drive_file_uuid: string | null
           duration_seconds: number | null
           file_path: string | null
           file_size: number | null
@@ -74,11 +180,11 @@ export type Database = {
           processing_status: string
           title: string
           topic_id: string
-          user_id: string
         }
         Insert: {
           created_at?: string
           drive_file_id?: string | null
+          drive_file_uuid?: string | null
           duration_seconds?: number | null
           file_path?: string | null
           file_size?: number | null
@@ -90,11 +196,11 @@ export type Database = {
           processing_status?: string
           title: string
           topic_id: string
-          user_id: string
         }
         Update: {
           created_at?: string
           drive_file_id?: string | null
+          drive_file_uuid?: string | null
           duration_seconds?: number | null
           file_path?: string | null
           file_size?: number | null
@@ -106,9 +212,15 @@ export type Database = {
           processing_status?: string
           title?: string
           topic_id?: string
-          user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "lessons_drive_file_uuid_fkey"
+            columns: ["drive_file_uuid"]
+            isOneToOne: false
+            referencedRelation: "drive_files"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "lessons_topic_id_fkey"
             columns: ["topic_id"]
@@ -117,6 +229,170 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      licenses: {
+        Row: {
+          affiliate_code: string | null
+          coupon_code: string | null
+          created_at: string
+          email: string
+          id: string
+          kwify_customer_id: string | null
+          metadata: Json
+          product_code: string | null
+          status: Database["public"]["Enums"]["license_status"]
+          updated_at: string
+        }
+        Insert: {
+          affiliate_code?: string | null
+          coupon_code?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          kwify_customer_id?: string | null
+          metadata?: Json
+          product_code?: string | null
+          status?: Database["public"]["Enums"]["license_status"]
+          updated_at?: string
+        }
+        Update: {
+          affiliate_code?: string | null
+          coupon_code?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          kwify_customer_id?: string | null
+          metadata?: Json
+          product_code?: string | null
+          status?: Database["public"]["Enums"]["license_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      payments: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          currency: string
+          id: string
+          kwify_order_id: string | null
+          license_id: string | null
+          paid_at: string | null
+          payload: Json
+          status: string
+        }
+        Insert: {
+          amount_cents?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          kwify_order_id?: string | null
+          license_id?: string | null
+          paid_at?: string | null
+          payload?: Json
+          status?: string
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          kwify_order_id?: string | null
+          license_id?: string | null
+          paid_at?: string | null
+          payload?: Json
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_license_id_fkey"
+            columns: ["license_id"]
+            isOneToOne: false
+            referencedRelation: "licenses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plans: {
+        Row: {
+          created_at: string
+          currency: string
+          id: string
+          interval: Database["public"]["Enums"]["plan_interval"]
+          is_active: boolean
+          metadata: Json
+          name: string
+          price_cents: number
+          product_code: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          id?: string
+          interval?: Database["public"]["Enums"]["plan_interval"]
+          is_active?: boolean
+          metadata?: Json
+          name: string
+          price_cents?: number
+          product_code: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          id?: string
+          interval?: Database["public"]["Enums"]["plan_interval"]
+          is_active?: boolean
+          metadata?: Json
+          name?: string
+          price_cents?: number
+          product_code?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      processing_queue: {
+        Row: {
+          attempts: number
+          created_at: string
+          drive_file_id: string
+          id: string
+          job_type: string
+          last_error: string | null
+          max_attempts: number
+          next_run_at: string
+          payload: Json
+          status: Database["public"]["Enums"]["queue_status"]
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          drive_file_id: string
+          id?: string
+          job_type: string
+          last_error?: string | null
+          max_attempts?: number
+          next_run_at?: string
+          payload?: Json
+          status?: Database["public"]["Enums"]["queue_status"]
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          drive_file_id?: string
+          id?: string
+          job_type?: string
+          last_error?: string | null
+          max_attempts?: number
+          next_run_at?: string
+          payload?: Json
+          status?: Database["public"]["Enums"]["queue_status"]
+          updated_at?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -157,7 +433,6 @@ export type Database = {
           question_text: string
           subject_id: string | null
           topic_id: string | null
-          user_id: string
         }
         Insert: {
           correct_option: string
@@ -170,7 +445,6 @@ export type Database = {
           question_text: string
           subject_id?: string | null
           topic_id?: string | null
-          user_id: string
         }
         Update: {
           correct_option?: string
@@ -183,7 +457,6 @@ export type Database = {
           question_text?: string
           subject_id?: string | null
           topic_id?: string | null
-          user_id?: string
         }
         Relationships: [
           {
@@ -269,7 +542,6 @@ export type Database = {
           id: string
           name: string
           sort_order: number | null
-          user_id: string
         }
         Insert: {
           created_at?: string
@@ -279,7 +551,6 @@ export type Database = {
           id?: string
           name: string
           sort_order?: number | null
-          user_id: string
         }
         Update: {
           created_at?: string
@@ -289,9 +560,65 @@ export type Database = {
           id?: string
           name?: string
           sort_order?: number | null
-          user_id?: string
         }
         Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          canceled_at: string | null
+          created_at: string
+          current_period_end: string | null
+          id: string
+          kwify_subscription_id: string | null
+          license_id: string
+          metadata: Json
+          plan_id: string | null
+          renewed_at: string | null
+          status: Database["public"]["Enums"]["subscription_status"]
+          updated_at: string
+        }
+        Insert: {
+          canceled_at?: string | null
+          created_at?: string
+          current_period_end?: string | null
+          id?: string
+          kwify_subscription_id?: string | null
+          license_id: string
+          metadata?: Json
+          plan_id?: string | null
+          renewed_at?: string | null
+          status?: Database["public"]["Enums"]["subscription_status"]
+          updated_at?: string
+        }
+        Update: {
+          canceled_at?: string | null
+          created_at?: string
+          current_period_end?: string | null
+          id?: string
+          kwify_subscription_id?: string | null
+          license_id?: string
+          metadata?: Json
+          plan_id?: string | null
+          renewed_at?: string | null
+          status?: Database["public"]["Enums"]["subscription_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_license_id_fkey"
+            columns: ["license_id"]
+            isOneToOne: false
+            referencedRelation: "licenses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       summaries: {
         Row: {
@@ -300,7 +627,6 @@ export type Database = {
           created_at: string
           id: string
           lesson_id: string
-          user_id: string
         }
         Insert: {
           bullet_points?: Json | null
@@ -308,7 +634,6 @@ export type Database = {
           created_at?: string
           id?: string
           lesson_id: string
-          user_id: string
         }
         Update: {
           bullet_points?: Json | null
@@ -316,7 +641,6 @@ export type Database = {
           created_at?: string
           id?: string
           lesson_id?: string
-          user_id?: string
         }
         Relationships: [
           {
@@ -328,6 +652,83 @@ export type Database = {
           },
         ]
       }
+      sync_logs: {
+        Row: {
+          context: Json
+          created_at: string
+          drive_file_id: string | null
+          id: string
+          level: string
+          message: string
+          sync_run_id: string
+        }
+        Insert: {
+          context?: Json
+          created_at?: string
+          drive_file_id?: string | null
+          id?: string
+          level?: string
+          message: string
+          sync_run_id: string
+        }
+        Update: {
+          context?: Json
+          created_at?: string
+          drive_file_id?: string | null
+          id?: string
+          level?: string
+          message?: string
+          sync_run_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sync_logs_sync_run_id_fkey"
+            columns: ["sync_run_id"]
+            isOneToOne: false
+            referencedRelation: "sync_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sync_runs: {
+        Row: {
+          errors_count: number
+          files_added: number
+          files_modified: number
+          files_removed: number
+          finished_at: string | null
+          id: string
+          started_at: string
+          status: Database["public"]["Enums"]["sync_run_status"]
+          summary: Json
+          trigger: string
+        }
+        Insert: {
+          errors_count?: number
+          files_added?: number
+          files_modified?: number
+          files_removed?: number
+          finished_at?: string | null
+          id?: string
+          started_at?: string
+          status?: Database["public"]["Enums"]["sync_run_status"]
+          summary?: Json
+          trigger?: string
+        }
+        Update: {
+          errors_count?: number
+          files_added?: number
+          files_modified?: number
+          files_removed?: number
+          finished_at?: string | null
+          id?: string
+          started_at?: string
+          status?: Database["public"]["Enums"]["sync_run_status"]
+          summary?: Json
+          trigger?: string
+        }
+        Relationships: []
+      }
       topics: {
         Row: {
           created_at: string
@@ -337,7 +738,6 @@ export type Database = {
           name: string
           sort_order: number | null
           subject_id: string
-          user_id: string
         }
         Insert: {
           created_at?: string
@@ -347,7 +747,6 @@ export type Database = {
           name: string
           sort_order?: number | null
           subject_id: string
-          user_id: string
         }
         Update: {
           created_at?: string
@@ -357,7 +756,6 @@ export type Database = {
           name?: string
           sort_order?: number | null
           subject_id?: string
-          user_id?: string
         }
         Relationships: [
           {
@@ -376,7 +774,6 @@ export type Database = {
           id: string
           language: string | null
           lesson_id: string
-          user_id: string
         }
         Insert: {
           content: string
@@ -384,7 +781,6 @@ export type Database = {
           id?: string
           language?: string | null
           lesson_id: string
-          user_id: string
         }
         Update: {
           content?: string
@@ -392,7 +788,6 @@ export type Database = {
           id?: string
           language?: string | null
           lesson_id?: string
-          user_id?: string
         }
         Relationships: [
           {
@@ -462,6 +857,27 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       weak_topics: {
         Row: {
           accuracy_rate: number | null
@@ -521,10 +937,24 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      email_has_active_license: { Args: { _email: string }; Returns: boolean }
+      get_my_access: { Args: never; Returns: Json }
+      has_active_subscription: { Args: { _user_id: string }; Returns: boolean }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "student"
+      license_status: "active" | "inactive" | "refunded"
+      plan_interval: "monthly" | "annual" | "lifetime"
+      queue_status: "pending" | "running" | "succeeded" | "failed" | "canceled"
+      subscription_status: "active" | "canceled" | "expired" | "past_due"
+      sync_run_status: "running" | "succeeded" | "failed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -651,6 +1081,13 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "student"],
+      license_status: ["active", "inactive", "refunded"],
+      plan_interval: ["monthly", "annual", "lifetime"],
+      queue_status: ["pending", "running", "succeeded", "failed", "canceled"],
+      subscription_status: ["active", "canceled", "expired", "past_due"],
+      sync_run_status: ["running", "succeeded", "failed"],
+    },
   },
 } as const
