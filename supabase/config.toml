@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.signup-with-license]
 verify_jwt = false
+
+[functions.stream-file]
+verify_jwt = false
