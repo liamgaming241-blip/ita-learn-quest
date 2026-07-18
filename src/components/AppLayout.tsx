@@ -7,11 +7,12 @@ import { Button } from "@/components/ui/button";
 import { VanguardLogo } from "@/components/VanguardLogo";
 import {
   LayoutDashboard, BookOpen, FileQuestion, Trophy,
-  TrendingDown, FolderSync, LogOut, Menu, Sun, Moon, Radar,
+  TrendingDown, Shield, LogOut, Menu, Sun, Moon, Radar,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useIsAdmin } from "@/hooks/useAccess";
 
-const navSections = [
+const baseNavSections = [
   {
     label: "Mission",
     items: [
@@ -30,7 +31,6 @@ const navSections = [
     label: "Inteligência",
     items: [
       { to: "/weak-topics", icon: TrendingDown, label: "Pontos Fracos" },
-      { to: "/drive-setup", icon: FolderSync, label: "Fontes de Dados" },
     ],
   },
 ];
@@ -41,7 +41,7 @@ const pageTitles: Record<string, string> = {
   "/questions": "Questões",
   "/simulados": "Simulados",
   "/weak-topics": "Pontos Fracos",
-  "/drive-setup": "Fontes de Dados",
+  "/admin": "Administração",
 };
 
 export const AppLayout = () => {
@@ -49,6 +49,10 @@ export const AppLayout = () => {
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const isAdmin = useIsAdmin();
+  const navSections = isAdmin
+    ? [...baseNavSections, { label: "Admin", items: [{ to: "/admin", icon: Shield, label: "Administração" }] }]
+    : baseNavSections;
   const title = pageTitles[location.pathname] ?? "VANGUARD";
   const displayName = user?.user_metadata?.display_name || user?.email?.split("@")[0] || "Cadete";
 
