@@ -158,6 +158,97 @@ Deno.serve(async (req) => {
 
     await log("info", "sync complete", { added, modified, removed });
 
+    // ---- Materialize subjects / topics / lessons from Drive tree ----
+    try {
+      const VIDEO_MIMES = new Set([
+        "video/mp4","video/webm","video/ogg","video/quicktime","video/x-m4v",
+        "video/x-matroska","video/matroska",
+      ]);
+      const PDF_MIMES = new Set(["application/pdf"]);
+      const isLessonFile = (m: string) => VIDEO_MIMES.has(m) || PDF_MIMES.has(m);
+      const fileType = (m: string) => (PDF_MIMES.has(m) ? "pdf" : "video");
+
+      // top-level folders = subjects
+      const topFolders = files.filter(
+        (f) => f.mimeType === FOLDER && f.parents?.[0] === rootId,
+      );
+
+      let sortS = 0;
+      for (const subj of topFolders) {
+        const { data: subjectRow, error: sErr } = await supabase
+          .from("subjects")
+          .upsert(
+            { drive_folder_id: subj.id, name: subj.name, folder_path: subj.path, sort_order: sortS++ },
+            { onConflict: "drive_folder_id" },
+          )
+          .select("id")
+          .single();
+        if (sErr || !subjectRow) { await log("error", `subject upsert failed: ${subj.name}`, { err: sErr?.message }); continue; }
+
+        // Immediate children of this subject
+        const kids = files.filter((f) => f.parents?.[0] === subj.id);
+        const subFolders = kids.filter((f) => f.mimeType === FOLDER);
+        const looseFiles = kids.filter((f) => isLessonFile(f.mimeType));
+
+        // Build topic list; add a synthetic "Geral" topic for loose files
+        const topics: { id: string; name: string; path: string; folderIdKey: string }[] = subFolders.map(
+          (f) => ({ id: f.id, name: f.name, path: f.path, folderIdKey: f.id }),
+        );
+        if (looseFiles.length > 0) {
+          topics.push({ id: `__loose__${subj.id}`, name: "Geral", path: subj.path, folderIdKey: `subject:${subj.id}` });
+        }
+
+        let sortT = 0;
+        for (const t of topics) {
+          const { data: topicRow, error: tErr } = await supabase
+            .from("topics")
+            .upsert(
+              { subject_id: subjectRow.id, drive_folder_id: t.folderIdKey, name: t.name, folder_path: t.path, sort_order: sortT++ },
+              { onConflict: "drive_folder_id" },
+            )
+            .select("id")
+            .single();
+          if (tErr || !topicRow) { await log("error", `topic upsert failed: ${t.name}`, { err: tErr?.message }); continue; }
+
+          // Lessons under this topic
+          const lessonFiles = t.id.startsWith("__loose__")
+            ? looseFiles
+            : files.filter((f) => isLessonFile(f.mimeType) && f.path.startsWith(t.path + "/"));
+
+          for (const lf of lessonFiles) {
+            const { data: dfRow } = await supabase
+              .from("drive_files").select("id").eq("drive_file_id", lf.id).maybeSingle();
+            const { error: lErr } = await supabase
+              .from("lessons")
+              .upsert(
+                {
+                  topic_id: topicRow.id,
+                  title: lf.name.replace(/\.[^.]+$/, ""),
+                  file_type: fileType(lf.mimeType),
+                  drive_file_id: lf.id,
+                  drive_file_uuid: dfRow?.id ?? null,
+                  file_path: lf.path,
+                  file_size: lf.size ? Number(lf.size) : null,
+                  processing_status: "ready",
+                },
+                { onConflict: "drive_file_id" },
+              );
+            if (lErr) await log("error", `lesson upsert failed: ${lf.name}`, { err: lErr.message }, lf.id);
+          }
+        }
+      }
+
+      // Remove lessons whose drive file is gone
+      const activeIds = files.filter((f) => f.mimeType !== FOLDER).map((f) => f.id);
+      if (activeIds.length) {
+        await supabase.from("lessons").delete().not("drive_file_id", "in", `(${activeIds.map((i) => `"${i}"`).join(",")})`);
+      }
+
+      await log("info", "materialization complete");
+    } catch (e) {
+      await log("error", `materialization failed: ${String(e)}`);
+    }
+
     // Kick queue
     try {
       await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/process-queue`, {
