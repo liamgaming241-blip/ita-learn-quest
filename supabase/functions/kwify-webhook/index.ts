@@ -75,13 +75,13 @@ Deno.serve(async (req) => {
       email,
       kwify_customer_id: kwifyCustomerId,
       product_code: productCode,
-      status: CANCELED.includes(event) ? "inactive" : "active",
+      status: isCanceled ? "inactive" : "active",
     }, { onConflict: "email" })
     .select()
     .single();
 
   if (license) {
-    if (APPROVED.includes(event) || RENEWED.includes(event)) {
+    if (isActivating) {
       const periodEnd = new Date();
       periodEnd.setMonth(periodEnd.getMonth() + 1);
 
@@ -117,7 +117,7 @@ Deno.serve(async (req) => {
           renewed_at: new Date().toISOString(),
         });
       }
-    } else if (CANCELED.includes(event)) {
+    } else if (isCanceled) {
       await supabase.from("subscriptions")
         .update({ status: "canceled", canceled_at: new Date().toISOString() })
         .eq("license_id", license.id);
