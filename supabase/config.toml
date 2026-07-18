@@ -1,7 +1,7 @@
 project_id = "gzkdweqzglgveryoosgz"
 
-[functions.index-drive]
+[functions.kwify-webhook]
 verify_jwt = false
 
-[functions.fetch-videos]
+[functions.signup-with-license]
 verify_jwt = false

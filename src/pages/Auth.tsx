@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Navigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -39,8 +40,15 @@ const Auth = () => {
           setLoading(false);
           return;
         }
-        await signUp(email, password, displayName);
-        toast({ title: "Cadete registrado", description: "Verifique seu email para confirmar." });
+        const { data, error } = await supabase.functions.invoke("signup-with-license", {
+          body: { email, password, display_name: displayName },
+        });
+        if (error || (data && (data as any).error)) {
+          const msg = (data as any)?.error || error?.message || "Falha no cadastro";
+          throw new Error(msg);
+        }
+        await signIn(email, password);
+        toast({ title: "Bem-vindo à Vanguard", description: "Sua licença foi validada." });
       }
     } catch (err: any) {
       toast({ title: "Erro", description: err.message, variant: "destructive" });
