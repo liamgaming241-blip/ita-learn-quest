@@ -9,13 +9,14 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AppLayout } from "@/components/AppLayout";
 import Auth from "@/pages/Auth";
+import SubscriptionRequired from "@/pages/SubscriptionRequired";
 
 const Dashboard = lazy(() => import("@/pages/Dashboard"));
 const Subjects = lazy(() => import("@/pages/Subjects"));
 const Questions = lazy(() => import("@/pages/Questions"));
 const Simulados = lazy(() => import("@/pages/Simulados"));
 const WeakTopics = lazy(() => import("@/pages/WeakTopics"));
-const DriveSetup = lazy(() => import("@/pages/DriveSetup"));
+const Admin = lazy(() => import("@/pages/Admin"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -46,13 +47,14 @@ const App = () => (
             <Suspense fallback={<PageLoader />}>
               <Routes>
                 <Route path="/auth" element={<Auth />} />
+                <Route path="/subscription-required" element={<ProtectedRoute><SubscriptionRequired /></ProtectedRoute>} />
                 <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/subjects" element={<Subjects />} />
                   <Route path="/questions" element={<Questions />} />
                   <Route path="/simulados" element={<Simulados />} />
                   <Route path="/weak-topics" element={<WeakTopics />} />
-                  <Route path="/drive-setup" element={<DriveSetup />} />
+                  <Route path="/admin" element={<Admin />} />
                 </Route>
                 <Route path="*" element={<NotFound />} />
               </Routes>
