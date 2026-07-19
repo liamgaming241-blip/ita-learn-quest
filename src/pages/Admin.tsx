@@ -10,6 +10,14 @@ import { toast } from "sonner";
 import { RefreshCw, PlayCircle, UserPlus, KeyRound, Search, Users, ShieldCheck, ShieldOff } from "lucide-react";
 
 const Admin = () => {
+  const Row = ({ label, value, good, bad }: { label: string; value: any; good?: boolean; bad?: boolean }) => (
+    <div className="flex justify-between gap-4">
+      <span className="text-muted-foreground">{label}</span>
+      <span className={good ? "text-success font-medium" : bad ? "text-destructive font-medium" : "text-foreground"}>
+        {String(value ?? "—")}
+      </span>
+    </div>
+  );
   const { isLoading } = useAccess();
   const isAdmin = useIsAdmin();
   const [runs, setRuns] = useState<any[]>([]);
