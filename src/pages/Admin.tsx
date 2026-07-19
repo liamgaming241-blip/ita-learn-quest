@@ -5,8 +5,9 @@ import { useIsAdmin, useAccess } from "@/hooks/useAccess";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { RefreshCw, PlayCircle, UserPlus, KeyRound } from "lucide-react";
+import { RefreshCw, PlayCircle, UserPlus, KeyRound, Search, Users, ShieldCheck, ShieldOff } from "lucide-react";
 
 const Admin = () => {
   const { isLoading } = useAccess();
@@ -17,6 +18,15 @@ const Admin = () => {
   const [folderId, setFolderId] = useState("");
   const [syncing, setSyncing] = useState(false);
   const [newLicenseEmail, setNewLicenseEmail] = useState("");
+  const [bulkEmails, setBulkEmails] = useState("");
+  const [granting, setGranting] = useState(false);
+  const [newUserEmail, setNewUserEmail] = useState("");
+  const [newUserPass, setNewUserPass] = useState("");
+  const [newUserName, setNewUserName] = useState("");
+  const [creatingUser, setCreatingUser] = useState(false);
+  const [diagEmail, setDiagEmail] = useState("");
+  const [diag, setDiag] = useState<any>(null);
+  const [diagLoading, setDiagLoading] = useState(false);
 
   const load = async () => {
     const [{ data: r }, { data: q }, { data: s }, { data: l }] = await Promise.all([
@@ -72,6 +82,57 @@ const Admin = () => {
     if (error) toast.error(error.message); else { toast.success(`Licença ${next}`); await load(); }
   };
 
+  const bulkGrant = async () => {
+    const emails = bulkEmails
+      .split(/[\s,;]+/)
+      .map(e => e.trim().toLowerCase())
+      .filter(e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e));
+    if (emails.length === 0) { toast.error("Nenhum email válido"); return; }
+    setGranting(true);
+    try {
+      const { data, error } = await supabase.rpc("admin_grant_licenses", { _emails: emails });
+      if (error) throw error;
+      toast.success(`${data} licenças ativadas`);
+      setBulkEmails("");
+      await load();
+    } catch (e: any) { toast.error(e.message); }
+    finally { setGranting(false); }
+  };
+
+  const createStudentAccount = async () => {
+    const email = newUserEmail.trim().toLowerCase();
+    if (!email || newUserPass.length < 6) { toast.error("Email e senha (6+) obrigatórios"); return; }
+    setCreatingUser(true);
+    try {
+      // Ensure license exists first so the student can log in later even without admin bypass.
+      await supabase.from("licenses").upsert(
+        { email, status: "active", product_code: "VANGUARD_PREMIUM" },
+        { onConflict: "email" },
+      );
+      const { data, error } = await supabase.functions.invoke("signup-with-license", {
+        body: { email, password: newUserPass, display_name: newUserName || undefined, skip_license: true },
+      });
+      if (error || (data as any)?.error) throw new Error((data as any)?.error || error?.message);
+      toast.success("Conta criada");
+      setNewUserEmail(""); setNewUserPass(""); setNewUserName("");
+      await load();
+    } catch (e: any) { toast.error(e.message); }
+    finally { setCreatingUser(false); }
+  };
+
+  const runDiagnostic = async () => {
+    const email = diagEmail.trim().toLowerCase();
+    if (!email) return;
+    setDiagLoading(true);
+    setDiag(null);
+    try {
+      const { data, error } = await supabase.rpc("admin_lookup_access", { _email: email });
+      if (error) throw error;
+      setDiag(data);
+    } catch (e: any) { toast.error(e.message); }
+    finally { setDiagLoading(false); }
+  };
+
   return (
     <div className="space-y-6">
       <Card className="surface-elevated"><CardContent className="p-5 space-y-3">
@@ -89,11 +150,44 @@ const Admin = () => {
         </p>
       </CardContent></Card>
 
+      {/* Diagnostic */}
+      <Card className="surface-elevated"><CardContent className="p-5 space-y-3">
+        <h2 className="font-display font-bold text-lg flex items-center gap-2"><Search className="h-4 w-4 text-accent" /> Diagnóstico de acesso</h2>
+        <div className="flex gap-2">
+          <Input placeholder="email@dominio.com" value={diagEmail} onChange={e => setDiagEmail(e.target.value)} onKeyDown={e => e.key === 'Enter' && runDiagnostic()} />
+          <Button onClick={runDiagnostic} disabled={diagLoading}>{diagLoading ? "..." : "Consultar"}</Button>
+        </div>
+        {diag && (
+          <div className="text-sm grid gap-1.5 rounded-md border border-border/40 p-3 bg-muted/30">
+            <Row label="Email" value={diag.email} />
+            <Row label="Conta existe" value={diag.account_exists ? "Sim" : "Não"} good={diag.account_exists} />
+            <Row label="Role" value={diag.role ?? "—"} />
+            <Row label="Licença" value={diag.license?.status ?? "sem licença"} good={diag.license?.status === 'active'} />
+            <Row label="Produto" value={diag.license?.product_code ?? "—"} />
+            <Row label="Assinatura" value={diag.subscription?.status ?? "—"} />
+            <Row label="Expira em" value={diag.subscription?.current_period_end ? new Date(diag.subscription.current_period_end).toLocaleString() : "—"} />
+            <Row label="Tem acesso" value={diag.has_access ? "SIM" : "NÃO"} good={diag.has_access} bad={!diag.has_access} />
+          </div>
+        )}
+      </CardContent></Card>
+
       <Card className="surface-elevated"><CardContent className="p-5 space-y-3">
         <h2 className="font-display font-bold text-lg flex items-center gap-2"><KeyRound className="h-4 w-4 text-accent" /> Licenças</h2>
         <div className="flex gap-2">
           <Input placeholder="email@dominio.com" value={newLicenseEmail} onChange={e => setNewLicenseEmail(e.target.value)} />
           <Button onClick={grantLicense}><UserPlus className="h-4 w-4 mr-1" /> Conceder</Button>
+        </div>
+        <div className="space-y-2 pt-2 border-t border-border/40">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Importação em massa</p>
+          <Textarea
+            placeholder="Cole vários emails separados por vírgula, espaço ou nova linha"
+            value={bulkEmails}
+            onChange={e => setBulkEmails(e.target.value)}
+            rows={3}
+          />
+          <Button onClick={bulkGrant} disabled={granting} variant="secondary">
+            <Users className="h-4 w-4 mr-1" /> {granting ? "Processando..." : "Ativar todas"}
+          </Button>
         </div>
         <div className="text-sm max-h-64 overflow-y-auto">
           {licenses.length === 0 && <p className="text-muted-foreground">Nenhuma licença.</p>}
@@ -109,6 +203,20 @@ const Admin = () => {
             </div>
           ))}
         </div>
+      </CardContent></Card>
+
+      {/* Create student directly */}
+      <Card className="surface-elevated"><CardContent className="p-5 space-y-3">
+        <h2 className="font-display font-bold text-lg flex items-center gap-2"><UserPlus className="h-4 w-4 text-accent" /> Criar conta de aluno</h2>
+        <div className="grid gap-2 sm:grid-cols-3">
+          <Input placeholder="Email" value={newUserEmail} onChange={e => setNewUserEmail(e.target.value)} />
+          <Input placeholder="Senha (6+)" type="text" value={newUserPass} onChange={e => setNewUserPass(e.target.value)} />
+          <Input placeholder="Nome (opcional)" value={newUserName} onChange={e => setNewUserName(e.target.value)} />
+        </div>
+        <Button onClick={createStudentAccount} disabled={creatingUser}>
+          {creatingUser ? "Criando..." : "Criar conta + ativar licença"}
+        </Button>
+        <p className="text-xs text-muted-foreground">A licença é ativada automaticamente e o email é confirmado.</p>
       </CardContent></Card>
 
       <Card className="surface"><CardContent className="p-5">
