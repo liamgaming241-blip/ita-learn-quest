@@ -29,11 +29,12 @@ const Auth = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim() || !password.trim()) return;
+    const normEmail = email.trim().toLowerCase();
+    if (!normEmail || !password.trim()) return;
     setLoading(true);
     try {
       if (isLogin) {
-        await signIn(email, password);
+        await signIn(normEmail, password);
       } else {
         if (!displayName.trim()) {
           toast({ title: "Nome obrigatório", variant: "destructive" });
@@ -41,13 +42,13 @@ const Auth = () => {
           return;
         }
         const { data, error } = await supabase.functions.invoke("signup-with-license", {
-          body: { email, password, display_name: displayName },
+          body: { email: normEmail, password, display_name: displayName.trim() },
         });
         if (error || (data && (data as any).error)) {
           const msg = (data as any)?.error || error?.message || "Falha no cadastro";
           throw new Error(msg);
         }
-        await signIn(email, password);
+        await signIn(normEmail, password);
         toast({ title: "Bem-vindo à Vanguard", description: "Sua licença foi validada." });
       }
     } catch (err: any) {

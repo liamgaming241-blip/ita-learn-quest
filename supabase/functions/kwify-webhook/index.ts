@@ -51,7 +51,18 @@ Deno.serve(async (req) => {
   const rawEvent: string = (payload.event || payload.type || payload.status || payload.event_name || "").toString().toLowerCase();
   const event = rawEvent.replace(/[\s_-]+/g, ".");
   const customer = payload.customer || payload.buyer || payload.data?.customer || {};
-  const email: string | undefined = (payload.email || customer.email || payload.data?.email || payload.Customer?.email || "").toString().trim().toLowerCase() || undefined;
+  const email: string | undefined = (
+    payload.email ||
+    customer.email ||
+    payload.data?.email ||
+    payload.data?.buyer?.email ||
+    payload.data?.customer?.email ||
+    payload.Customer?.email ||
+    payload.member?.email ||
+    payload.student?.email ||
+    payload.user?.email ||
+    ""
+  ).toString().trim().toLowerCase() || undefined;
   const kwifyCustomerId = payload.customer_id || customer.id || null;
   const kwifyOrderId = payload.order_id || payload.transaction_id || payload.data?.order_id || null;
   const kwifySubId = payload.subscription_id || payload.data?.subscription_id || null;
@@ -63,10 +74,13 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ error: "missing email" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 
-  const isApproved = /approved|paid|completed|purchase\.complete|order\.complete/.test(event);
-  const isRenewed = /renew/.test(event);
-  const isCanceled = /cancel|refund|chargeback|expired|failed/.test(event);
-  const isActivating = isApproved || isRenewed;
+  // Broad matching — Kiwify sends PT/EN and varying formats.
+  const isCanceled = /cancel|refund|reembols|chargeback|estorn|expired|failed|revok|access\.remov|member\.remov/.test(event);
+  const isApproved = /approv|paid|complet|aprovad|pag[oa]|purchase|compra|order\.complete|pedido\.aprov|access\.grant|access\.add|member\.add|student\.add|active|ativ/.test(event);
+  const isRenewed = /renew|renov/.test(event);
+  // Default: if we couldn't classify, treat as activating (safer — admin can revoke).
+  // Kiwify sometimes posts unlabeled events for members-area actions.
+  const isActivating = isApproved || isRenewed || (!isCanceled && !event);
 
   // Upsert license
   const { data: license } = await supabase

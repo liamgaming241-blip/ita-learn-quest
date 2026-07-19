@@ -937,6 +937,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_grant_licenses: {
+        Args: { _emails: string[]; _product_code?: string }
+        Returns: number
+      }
+      admin_lookup_access: { Args: { _email: string }; Returns: Json }
       email_has_active_license: { Args: { _email: string }; Returns: boolean }
       get_my_access: { Args: never; Returns: Json }
       has_active_subscription: { Args: { _user_id: string }; Returns: boolean }
