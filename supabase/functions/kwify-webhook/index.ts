@@ -20,6 +20,52 @@ async function hmacHex(secret: string, body: string) {
   return Array.from(new Uint8Array(sig)).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+function firstString(...values: unknown[]) {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim()) return value.trim();
+    if (typeof value === "number" && Number.isFinite(value)) return String(value);
+  }
+  return undefined;
+}
+
+function findEmail(value: unknown): string | undefined {
+  if (typeof value === "string") {
+    const match = value.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+    return match?.[0]?.trim().toLowerCase();
+  }
+  if (!value || typeof value !== "object") return undefined;
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const email = findEmail(item);
+      if (email) return email;
+    }
+    return undefined;
+  }
+
+  const record = value as Record<string, unknown>;
+  const preferredKeys = ["email", "customer_email", "buyer_email", "student_email", "member_email", "user_email"];
+  for (const key of preferredKeys) {
+    const email = findEmail(record[key]);
+    if (email) return email;
+  }
+  for (const item of Object.values(record)) {
+    const email = findEmail(item);
+    if (email) return email;
+  }
+  return undefined;
+}
+
+function normalizeProductCode(value: string | undefined) {
+  const text = (value || "Vanguard acess").trim();
+  return text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .toUpperCase() || "VANGUARD_ACESS";
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return new Response("Method not allowed", { status: 405, headers: corsHeaders });
@@ -50,25 +96,18 @@ Deno.serve(async (req) => {
 
   const rawEvent: string = (payload.event || payload.type || payload.status || payload.event_name || "").toString().toLowerCase();
   const event = rawEvent.replace(/[\s_-]+/g, ".");
-  const customer = payload.customer || payload.buyer || payload.data?.customer || {};
-  const email: string | undefined = (
-    payload.email ||
-    customer.email ||
-    payload.data?.email ||
-    payload.data?.buyer?.email ||
-    payload.data?.customer?.email ||
-    payload.Customer?.email ||
-    payload.member?.email ||
-    payload.student?.email ||
-    payload.user?.email ||
-    ""
-  ).toString().trim().toLowerCase() || undefined;
-  const kwifyCustomerId = payload.customer_id || customer.id || null;
-  const kwifyOrderId = payload.order_id || payload.transaction_id || payload.data?.order_id || null;
-  const kwifySubId = payload.subscription_id || payload.data?.subscription_id || null;
-  const productCode = payload.product_code || payload.product?.code || "VANGUARD_PREMIUM";
-  const amountCents = Number(payload.amount_cents ?? payload.amount ?? 0);
-  const currency = payload.currency ?? "BRL";
+  const data = payload.data || {};
+  const customer = payload.customer || payload.buyer || data.customer || data.buyer || {};
+  const subscription = payload.subscription || data.subscription || payload.plan || data.plan || {};
+  const product = payload.product || data.product || payload.offer || data.offer || {};
+  const email = findEmail(payload);
+  const kwifyCustomerId = firstString(payload.customer_id, data.customer_id, customer.id, customer.customer_id) || null;
+  const kwifyOrderId = firstString(payload.order_id, data.order_id, payload.transaction_id, data.transaction_id, payload.sale_id, data.sale_id, payload.checkout_id, data.checkout_id) || null;
+  const kwifySubId = firstString(payload.subscription_id, data.subscription_id, subscription.id, subscription.subscription_id) || null;
+  const productName = firstString(payload.subscription_name, data.subscription_name, subscription.name, subscription.title, payload.product_name, data.product_name, product.name, product.title);
+  const productCode = firstString(payload.product_code, data.product_code, product.code, product.id) || normalizeProductCode(productName);
+  const amountCents = Number(payload.amount_cents ?? data.amount_cents ?? payload.amount ?? data.amount ?? 0);
+  const currency = payload.currency ?? data.currency ?? "BRL";
 
   if (!email) {
     return new Response(JSON.stringify({ error: "missing email" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -90,6 +129,7 @@ Deno.serve(async (req) => {
       kwify_customer_id: kwifyCustomerId,
       product_code: productCode,
       status: isCanceled ? "inactive" : "active",
+      metadata: { product_name: productName || "Vanguard acess", source: "kwify-webhook" },
     }, { onConflict: "email" })
     .select()
     .single();
