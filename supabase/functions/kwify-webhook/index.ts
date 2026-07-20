@@ -56,6 +56,18 @@ function findEmail(value: unknown): string | undefined {
   return undefined;
 }
 
+function collectEmails(value: unknown, acc: Set<string> = new Set()): Set<string> {
+  if (typeof value === "string") {
+    const matches = value.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi);
+    if (matches) for (const m of matches) acc.add(m.trim().toLowerCase());
+    return acc;
+  }
+  if (!value || typeof value !== "object") return acc;
+  if (Array.isArray(value)) { for (const v of value) collectEmails(v, acc); return acc; }
+  for (const v of Object.values(value as Record<string, unknown>)) collectEmails(v, acc);
+  return acc;
+}
+
 function normalizeProductCode(value: string | undefined) {
   const text = (value || "Vanguard acess").trim();
   return text
@@ -101,6 +113,7 @@ Deno.serve(async (req) => {
   const subscription = payload.subscription || data.subscription || payload.plan || data.plan || {};
   const product = payload.product || data.product || payload.offer || data.offer || {};
   const email = findEmail(payload);
+  const allEmails = collectEmails(payload);
   const kwifyCustomerId = firstString(payload.customer_id, data.customer_id, customer.id, customer.customer_id) || null;
   const kwifyOrderId = firstString(payload.order_id, data.order_id, payload.transaction_id, data.transaction_id, payload.sale_id, data.sale_id, payload.checkout_id, data.checkout_id) || null;
   const kwifySubId = firstString(payload.subscription_id, data.subscription_id, subscription.id, subscription.subscription_id) || null;
@@ -135,6 +148,15 @@ Deno.serve(async (req) => {
     .single();
 
   if (license) {
+    // Register every other email seen in the payload as an alias.
+    for (const alt of allEmails) {
+      if (alt === email) continue;
+      await supabase.from("license_email_aliases").upsert(
+        { license_id: license.id, email: alt },
+        { onConflict: "canonical_email" },
+      );
+    }
+
     if (isActivating) {
       const periodEnd = new Date();
       periodEnd.setMonth(periodEnd.getMonth() + 1);

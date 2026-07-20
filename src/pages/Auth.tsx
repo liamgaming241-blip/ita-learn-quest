@@ -23,6 +23,8 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [purchaseEmail, setPurchaseEmail] = useState("");
+  const [showPurchaseField, setShowPurchaseField] = useState(false);
   const { toast } = useToast();
 
   if (user) return <Navigate to="/" replace />;
@@ -41,11 +43,18 @@ const Auth = () => {
           setLoading(false);
           return;
         }
-        const { data, error } = await supabase.functions.invoke("signup-with-license", {
-          body: { email: normEmail, password, display_name: displayName.trim() },
-        });
+        const body: Record<string, unknown> = { email: normEmail, password, display_name: displayName.trim() };
+        if (purchaseEmail.trim()) body.purchase_email = purchaseEmail.trim().toLowerCase();
+        const { data, error } = await supabase.functions.invoke("signup-with-license", { body });
         if (error || (data && (data as any).error)) {
-          const msg = (data as any)?.error || error?.message || "Falha no cadastro";
+          const errData = (data as any) || {};
+          const msg = errData.error || error?.message || "Falha no cadastro";
+          if (errData.code === "no_license" && !purchaseEmail.trim()) {
+            setShowPurchaseField(true);
+            toast({ title: "Licença não encontrada", description: errData.hint || msg, variant: "destructive" });
+            setLoading(false);
+            return;
+          }
           throw new Error(msg);
         }
         await signIn(normEmail, password);
@@ -196,6 +205,26 @@ const Auth = () => {
                     className="h-11 focus-visible:ring-accent"
                   />
                 </div>
+                {!isLogin && showPurchaseField && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    className="space-y-1.5 overflow-hidden"
+                  >
+                    <label className="text-[11px] font-semibold uppercase tracking-wider text-accent">Email usado na compra (Kwify)</label>
+                    <Input
+                      type="email"
+                      placeholder="Se você comprou com outro email, informe aqui"
+                      value={purchaseEmail}
+                      onChange={(e) => setPurchaseEmail(e.target.value)}
+                      autoComplete="email"
+                      className="h-11 focus-visible:ring-accent"
+                    />
+                    <p className="text-[11px] text-muted-foreground">
+                      Vamos vincular sua compra a este novo email de acesso automaticamente.
+                    </p>
+                  </motion.div>
+                )}
                 <div className="space-y-1.5">
                   <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Senha</label>
                   <Input

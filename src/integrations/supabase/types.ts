@@ -230,9 +230,45 @@ export type Database = {
           },
         ]
       }
+      license_email_aliases: {
+        Row: {
+          added_by: string | null
+          canonical_email: string
+          created_at: string
+          email: string
+          id: string
+          license_id: string
+        }
+        Insert: {
+          added_by?: string | null
+          canonical_email: string
+          created_at?: string
+          email: string
+          id?: string
+          license_id: string
+        }
+        Update: {
+          added_by?: string | null
+          canonical_email?: string
+          created_at?: string
+          email?: string
+          id?: string
+          license_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "license_email_aliases_license_id_fkey"
+            columns: ["license_id"]
+            isOneToOne: false
+            referencedRelation: "licenses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       licenses: {
         Row: {
           affiliate_code: string | null
+          canonical_email: string | null
           coupon_code: string | null
           created_at: string
           email: string
@@ -245,6 +281,7 @@ export type Database = {
         }
         Insert: {
           affiliate_code?: string | null
+          canonical_email?: string | null
           coupon_code?: string | null
           created_at?: string
           email: string
@@ -257,6 +294,7 @@ export type Database = {
         }
         Update: {
           affiliate_code?: string | null
+          canonical_email?: string | null
           coupon_code?: string | null
           created_at?: string
           email?: string
@@ -937,11 +975,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_add_license_alias: {
+        Args: { _email: string; _license_id: string }
+        Returns: string
+      }
       admin_grant_licenses: {
         Args: { _emails: string[]; _product_code?: string }
         Returns: number
       }
       admin_lookup_access: { Args: { _email: string }; Returns: Json }
+      canonical_email: { Args: { _email: string }; Returns: string }
       email_has_active_license: { Args: { _email: string }; Returns: boolean }
       get_my_access: { Args: never; Returns: Json }
       has_active_subscription: { Args: { _user_id: string }; Returns: boolean }
@@ -951,6 +994,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      link_signup_email_to_license: {
+        Args: { _purchase_email: string; _signup_email: string }
+        Returns: string
       }
     }
     Enums: {

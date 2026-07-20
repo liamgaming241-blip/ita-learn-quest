@@ -19,6 +19,9 @@ Deno.serve(async (req) => {
   const password = String(body.password ?? "");
   const display_name = body.display_name ? String(body.display_name) : undefined;
   const skip_license = body.skip_license === true;
+  const purchase_email = body.purchase_email
+    ? String(body.purchase_email).trim().toLowerCase()
+    : undefined;
 
   if (!email || !password || password.length < 6) {
     return new Response(JSON.stringify({ error: "email e senha (mín. 6) obrigatórios" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -39,14 +42,33 @@ Deno.serve(async (req) => {
   }
 
   if (!bypass) {
-    const { data: hasLicense, error: licErr } = await supabase.rpc("email_has_active_license", { _email: email });
-    if (licErr) {
-      return new Response(JSON.stringify({ error: licErr.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    // Check signup email first; if no match and a purchase_email was provided, check it too.
+    let hasLicense = false;
+    const { data: v1, error: e1 } = await supabase.rpc("email_has_active_license", { _email: email });
+    if (e1) return new Response(JSON.stringify({ error: e1.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    hasLicense = !!v1;
+    let matchedVia: "signup" | "purchase" | null = hasLicense ? "signup" : null;
+
+    if (!hasLicense && purchase_email) {
+      const { data: v2, error: e2 } = await supabase.rpc("email_has_active_license", { _email: purchase_email });
+      if (e2) return new Response(JSON.stringify({ error: e2.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      hasLicense = !!v2;
+      if (hasLicense) matchedVia = "purchase";
     }
+
     if (!hasLicense) {
-      return new Response(JSON.stringify({ error: "Nenhuma licença ativa encontrada para este email. Adquira o Vanguard Premium na Kwify para continuar." }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      return new Response(JSON.stringify({
+        error: "Nenhuma licença ativa encontrada para este email.",
+        hint: "Se sua compra na Kwify foi feita com outro email, informe-o no campo 'Email da compra'. Caso o problema persista, contate o suporte.",
+        code: "no_license",
+      }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // If matched via a different purchase email, link the signup email as alias to that license.
+    if (matchedVia === "purchase" && purchase_email) {
+      await supabase.rpc("link_signup_email_to_license", {
+        _signup_email: email,
+        _purchase_email: purchase_email,
       });
     }
   }
