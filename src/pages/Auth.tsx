@@ -23,6 +23,8 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [purchaseEmail, setPurchaseEmail] = useState("");
+  const [showPurchaseField, setShowPurchaseField] = useState(false);
   const { toast } = useToast();
 
   if (user) return <Navigate to="/" replace />;
@@ -41,11 +43,18 @@ const Auth = () => {
           setLoading(false);
           return;
         }
-        const { data, error } = await supabase.functions.invoke("signup-with-license", {
-          body: { email: normEmail, password, display_name: displayName.trim() },
-        });
+        const body: Record<string, unknown> = { email: normEmail, password, display_name: displayName.trim() };
+        if (purchaseEmail.trim()) body.purchase_email = purchaseEmail.trim().toLowerCase();
+        const { data, error } = await supabase.functions.invoke("signup-with-license", { body });
         if (error || (data && (data as any).error)) {
-          const msg = (data as any)?.error || error?.message || "Falha no cadastro";
+          const errData = (data as any) || {};
+          const msg = errData.error || error?.message || "Falha no cadastro";
+          if (errData.code === "no_license" && !purchaseEmail.trim()) {
+            setShowPurchaseField(true);
+            toast({ title: "Licença não encontrada", description: errData.hint || msg, variant: "destructive" });
+            setLoading(false);
+            return;
+          }
           throw new Error(msg);
         }
         await signIn(normEmail, password);
