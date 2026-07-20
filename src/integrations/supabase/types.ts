@@ -995,6 +995,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      link_signup_email_to_license: {
+        Args: { _purchase_email: string; _signup_email: string }
+        Returns: string
+      }
     }
     Enums: {
       app_role: "admin" | "student"
