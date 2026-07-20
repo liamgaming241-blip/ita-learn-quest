@@ -66,18 +66,10 @@ Deno.serve(async (req) => {
 
     // If matched via a different purchase email, link the signup email as alias to that license.
     if (matchedVia === "purchase" && purchase_email) {
-      const { data: lic } = await supabase
-        .from("licenses")
-        .select("id")
-        .or(`email.eq.${purchase_email},canonical_email.eq.${purchase_email}`)
-        .limit(1)
-        .maybeSingle();
-      if (lic?.id) {
-        await supabase.from("license_email_aliases").upsert(
-          { license_id: lic.id, email },
-          { onConflict: "canonical_email" },
-        );
-      }
+      await supabase.rpc("link_signup_email_to_license", {
+        _signup_email: email,
+        _purchase_email: purchase_email,
+      });
     }
   }
 
