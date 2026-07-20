@@ -205,6 +205,26 @@ const Auth = () => {
                     className="h-11 focus-visible:ring-accent"
                   />
                 </div>
+                {!isLogin && showPurchaseField && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    className="space-y-1.5 overflow-hidden"
+                  >
+                    <label className="text-[11px] font-semibold uppercase tracking-wider text-accent">Email usado na compra (Kwify)</label>
+                    <Input
+                      type="email"
+                      placeholder="Se você comprou com outro email, informe aqui"
+                      value={purchaseEmail}
+                      onChange={(e) => setPurchaseEmail(e.target.value)}
+                      autoComplete="email"
+                      className="h-11 focus-visible:ring-accent"
+                    />
+                    <p className="text-[11px] text-muted-foreground">
+                      Vamos vincular sua compra a este novo email de acesso automaticamente.
+                    </p>
+                  </motion.div>
+                )}
                 <div className="space-y-1.5">
                   <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Senha</label>
                   <Input

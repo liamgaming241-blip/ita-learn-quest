@@ -35,17 +35,25 @@ const Admin = () => {
   const [diagEmail, setDiagEmail] = useState("");
   const [diag, setDiag] = useState<any>(null);
   const [diagLoading, setDiagLoading] = useState(false);
+  const [aliasInputs, setAliasInputs] = useState<Record<string, string>>({});
+  const [licenseAliases, setLicenseAliases] = useState<Record<string, any[]>>({});
 
   const load = async () => {
-    const [{ data: r }, { data: q }, { data: s }, { data: l }] = await Promise.all([
+    const [{ data: r }, { data: q }, { data: s }, { data: l }, { data: a }] = await Promise.all([
       supabase.from("sync_runs").select("*").order("started_at", { ascending: false }).limit(10),
       supabase.from("processing_queue").select("*").order("created_at", { ascending: false }).limit(20),
       supabase.from("app_settings").select("*").maybeSingle(),
       supabase.from("licenses").select("*").order("created_at", { ascending: false }).limit(50),
+      supabase.from("license_email_aliases").select("*"),
     ]);
     setRuns(r ?? []);
     setQueue(q ?? []);
     setLicenses(l ?? []);
+    const grouped: Record<string, any[]> = {};
+    for (const row of (a ?? []) as any[]) {
+      (grouped[row.license_id] ??= []).push(row);
+    }
+    setLicenseAliases(grouped);
     if (s?.content_root_folder_id) setFolderId(s.content_root_folder_id);
   };
 
@@ -141,6 +149,23 @@ const Admin = () => {
     finally { setDiagLoading(false); }
   };
 
+  const addAlias = async (licenseId: string) => {
+    const email = (aliasInputs[licenseId] || "").trim().toLowerCase();
+    if (!email) return;
+    try {
+      const { error } = await supabase.rpc("admin_add_license_alias", { _license_id: licenseId, _email: email });
+      if (error) throw error;
+      toast.success("Alias adicionado");
+      setAliasInputs({ ...aliasInputs, [licenseId]: "" });
+      await load();
+    } catch (e: any) { toast.error(e.message); }
+  };
+
+  const removeAlias = async (aliasId: string) => {
+    const { error } = await supabase.from("license_email_aliases").delete().eq("id", aliasId);
+    if (error) toast.error(error.message); else { toast.success("Alias removido"); await load(); }
+  };
+
   return (
     <div className="space-y-6">
       <Card className="surface-elevated"><CardContent className="p-5 space-y-3">
@@ -168,6 +193,7 @@ const Admin = () => {
         {diag && (
           <div className="text-sm grid gap-1.5 rounded-md border border-border/40 p-3 bg-muted/30">
             <Row label="Email" value={diag.email} />
+            <Row label="Forma canônica" value={diag.canonical_email} />
             <Row label="Conta existe" value={diag.account_exists ? "Sim" : "Não"} good={diag.account_exists} />
             <Row label="Role" value={diag.role ?? "—"} />
             <Row label="Licença" value={diag.license?.status ?? "sem licença"} good={diag.license?.status === 'active'} />
@@ -175,6 +201,16 @@ const Admin = () => {
             <Row label="Assinatura" value={diag.subscription?.status ?? "—"} />
             <Row label="Expira em" value={diag.subscription?.current_period_end ? new Date(diag.subscription.current_period_end).toLocaleString() : "—"} />
             <Row label="Tem acesso" value={diag.has_access ? "SIM" : "NÃO"} good={diag.has_access} bad={!diag.has_access} />
+            {diag.aliases && diag.aliases.length > 0 && (
+              <div className="pt-2 border-t border-border/40">
+                <p className="text-xs font-semibold uppercase text-muted-foreground mb-1">Emails vinculados</p>
+                <ul className="text-xs space-y-0.5">
+                  {diag.aliases.map((a: any) => (
+                    <li key={a.id} className="truncate">· {a.email}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         )}
       </CardContent></Card>
@@ -200,13 +236,34 @@ const Admin = () => {
         <div className="text-sm max-h-64 overflow-y-auto">
           {licenses.length === 0 && <p className="text-muted-foreground">Nenhuma licença.</p>}
           {licenses.map(l => (
-            <div key={l.id} className="flex justify-between items-center border-b border-border/40 py-1.5">
-              <span className="truncate">{l.email} <span className="text-muted-foreground text-xs">· {l.product_code}</span></span>
-              <div className="flex items-center gap-2">
-                <span className={l.status === 'active' ? 'text-success text-xs' : 'text-destructive text-xs'}>{l.status}</span>
-                <Button size="sm" variant="ghost" onClick={() => toggleLicense(l)}>
-                  {l.status === 'active' ? 'Desativar' : 'Ativar'}
-                </Button>
+            <div key={l.id} className="border-b border-border/40 py-1.5 space-y-1">
+              <div className="flex justify-between items-center">
+                <span className="truncate">{l.email} <span className="text-muted-foreground text-xs">· {l.product_code}</span></span>
+                <div className="flex items-center gap-2">
+                  <span className={l.status === 'active' ? 'text-success text-xs' : 'text-destructive text-xs'}>{l.status}</span>
+                  <Button size="sm" variant="ghost" onClick={() => toggleLicense(l)}>
+                    {l.status === 'active' ? 'Desativar' : 'Ativar'}
+                  </Button>
+                </div>
+              </div>
+              {(licenseAliases[l.id] ?? []).length > 0 && (
+                <div className="text-xs text-muted-foreground pl-3 space-y-0.5">
+                  {(licenseAliases[l.id] ?? []).map((a: any) => (
+                    <div key={a.id} className="flex justify-between items-center">
+                      <span className="truncate">↳ {a.email}</span>
+                      <button className="text-destructive hover:underline text-[11px]" onClick={() => removeAlias(a.id)}>remover</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="flex gap-1 pl-3">
+                <Input
+                  placeholder="Adicionar email alternativo"
+                  value={aliasInputs[l.id] || ""}
+                  onChange={e => setAliasInputs({ ...aliasInputs, [l.id]: e.target.value })}
+                  className="h-8 text-xs"
+                />
+                <Button size="sm" variant="secondary" onClick={() => addAlias(l.id)}>+ alias</Button>
               </div>
             </div>
           ))}
