@@ -102,10 +102,10 @@ const Questions = () => {
             <Card className="surface-elevated border-border/60">
               <CardContent className="p-6 space-y-5">
                 <div className="flex items-center justify-between">
-                  <p className="text-[10px] uppercase font-semibold tracking-[0.2em] text-muted-foreground">
+                  <p className="text-[11px] uppercase font-semibold tracking-[0.2em] text-muted-foreground">
                     Questão <span className="text-foreground font-mono tabular-nums">{currentIdx + 1}</span> de {total}
                   </p>
-                  <Badge variant="outline" className="border-accent/30 text-accent bg-accent/5 uppercase tracking-wider text-[10px]">
+                  <Badge variant="outline" className="border-accent/30 text-accent bg-accent/5 uppercase tracking-wider text-[11px]">
                     {current.difficulty}
                   </Badge>
                 </div>
@@ -170,7 +170,7 @@ const Questions = () => {
                       className="overflow-hidden"
                     >
                       <div className="rounded-lg border border-accent/20 bg-accent/5 p-4 text-sm">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent mb-1.5">Explicação</p>
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-accent mb-1.5">Explicação</p>
                         <p className="leading-relaxed">{current.explanation}</p>
                       </div>
                     </motion.div>

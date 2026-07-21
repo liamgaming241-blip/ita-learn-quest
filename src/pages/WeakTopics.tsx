@@ -26,7 +26,7 @@ const WeakTopics = () => {
       {!isLoading && (!weakTopics || weakTopics.length === 0) && (
         <Card className="glass border-dashed">
           <CardContent className="p-12 text-center">
-            <TrendingDown className="mx-auto mb-4 h-12 w-12 text-muted-foreground/50" />
+            <TrendingDown className="mx-auto mb-4 h-12 w-12 text-muted-foreground/75" />
             <p className="text-muted-foreground">Nenhum ponto fraco identificado ainda. Resolva mais questões para gerar análise.</p>
           </CardContent>
         </Card>

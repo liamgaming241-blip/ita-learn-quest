@@ -85,7 +85,7 @@ const Auth = () => {
           transition={{ duration: 11, repeat: Infinity, ease: "easeInOut" }}
         />
 
-        <div className="relative z-10 flex flex-col justify-between p-12 xl:p-16 w-full text-primary-foreground">
+        <div className="relative z-10 flex flex-col justify-between p-12 xl:p-16 w-full text-sidebar-foreground">
           <VanguardLogo />
 
           <div className="max-w-lg">
@@ -93,7 +93,7 @@ const Auth = () => {
               initial={{ opacity: 0, y: -6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15, duration: 0.5 }}
-              className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-accent"
+              className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-accent"
             >
               <Sparkles className="h-3 w-3" /> Elite prep intelligence
             </motion.div>
@@ -109,7 +109,7 @@ const Auth = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.45, duration: 0.6 }}
-              className="mt-5 text-lg text-primary-foreground/70 leading-relaxed"
+              className="mt-5 text-lg text-sidebar-foreground/85 leading-relaxed"
             >
               A plataforma premium de inteligência de estudos para candidatos ao ITA e IME. Precisão, disciplina e dados a cada movimento.
             </motion.p>
@@ -132,13 +132,13 @@ const Auth = () => {
                   <div className="h-10 w-10 shrink-0 rounded-lg border border-accent/25 bg-accent/10 flex items-center justify-center">
                     <Icon className="h-4 w-4 text-accent" />
                   </div>
-                  <span className="text-sm text-primary-foreground/85">{text}</span>
+                  <span className="text-sm text-sidebar-foreground/90">{text}</span>
                 </motion.div>
               ))}
             </motion.div>
           </div>
 
-          <div className="flex items-center gap-6 text-[11px] text-primary-foreground/40 font-mono uppercase tracking-[0.18em]">
+          <div className="flex items-center gap-6 text-xs text-sidebar-foreground/65 font-mono uppercase tracking-[0.18em]">
             <span>v.01 · Mission Ready</span>
             <span>·</span>
             <span>ITA · IME</span>
@@ -159,7 +159,7 @@ const Auth = () => {
           </div>
 
           <div>
-            <p className="text-[10px] uppercase font-semibold tracking-[0.22em] text-muted-foreground">
+            <p className="text-[11px] uppercase font-semibold tracking-[0.22em] text-muted-foreground">
               {isLogin ? "Entrar na base" : "Novo cadete"}
             </p>
             <h2 className="font-display font-extrabold text-3xl mt-2">
@@ -182,7 +182,7 @@ const Auth = () => {
                     transition={{ duration: 0.3 }}
                     className="space-y-1.5 overflow-hidden"
                   >
-                    <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Nome</label>
+                    <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nome</label>
                     <Input
                       placeholder="Como devemos te chamar"
                       value={displayName}
@@ -194,7 +194,7 @@ const Auth = () => {
                   </motion.div>
                 )}
                 <div className="space-y-1.5">
-                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Email</label>
+                  <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Email</label>
                   <Input
                     type="email"
                     placeholder="cadete@vanguard.app"
@@ -211,7 +211,7 @@ const Auth = () => {
                     animate={{ opacity: 1, height: "auto" }}
                     className="space-y-1.5 overflow-hidden"
                   >
-                    <label className="text-[11px] font-semibold uppercase tracking-wider text-accent">Email usado na compra (Kwify)</label>
+                    <label className="text-xs font-semibold uppercase tracking-wider text-accent">Email usado na compra (Kwify)</label>
                     <Input
                       type="email"
                       placeholder="Se você comprou com outro email, informe aqui"
@@ -220,13 +220,13 @@ const Auth = () => {
                       autoComplete="email"
                       className="h-11 focus-visible:ring-accent"
                     />
-                    <p className="text-[11px] text-muted-foreground">
+                    <p className="text-xs text-muted-foreground">
                       Vamos vincular sua compra a este novo email de acesso automaticamente.
                     </p>
                   </motion.div>
                 )}
                 <div className="space-y-1.5">
-                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Senha</label>
+                  <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Senha</label>
                   <Input
                     type="password"
                     placeholder="Mínimo 6 caracteres"
@@ -266,7 +266,7 @@ const Auth = () => {
             </CardContent>
           </Card>
 
-          <p className="text-[11px] text-center text-muted-foreground/70">
+          <p className="text-xs text-center text-muted-foreground/85">
             Ao continuar você aceita nossos termos e política de privacidade.
           </p>
         </motion.div>

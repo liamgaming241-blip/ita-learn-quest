@@ -113,7 +113,7 @@ const Dashboard = () => {
               initial={{ opacity: 0, y: -6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 0.5 }}
-              className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-accent"
+              className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-accent"
             >
               <Sparkles className="h-3 w-3" />
               Mission Briefing
@@ -122,7 +122,7 @@ const Dashboard = () => {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.28, duration: 0.55, ease: [0.22, 1, 0.36, 1] as const }}
-              className="mt-4 font-display font-extrabold text-3xl sm:text-4xl leading-[1.05] text-primary-foreground"
+              className="mt-4 font-display font-extrabold text-3xl sm:text-4xl leading-[1.05] text-sidebar-foreground"
             >
               Bom retorno, <span className="text-gold">{displayName}</span>.
             </motion.h1>
@@ -130,7 +130,7 @@ const Dashboard = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.38, duration: 0.5 }}
-              className="mt-3 max-w-lg text-sm sm:text-base text-primary-foreground/70"
+              className="mt-3 max-w-lg text-sm sm:text-base text-sidebar-foreground/85"
             >
               À frente da aprovação. Sua central estratégica está calibrada — foco no que move o ponteiro hoje.
             </motion.p>
@@ -145,7 +145,7 @@ const Dashboard = () => {
                   <Zap className="mr-2 h-4 w-4" /> Começar sessão
                 </Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="border-border/40 bg-card/10 text-primary-foreground hover:bg-card/20 hover:text-primary-foreground backdrop-blur-sm hover:scale-[1.02]">
+              <Button asChild size="lg" variant="outline" className="border-border/40 bg-card/10 text-sidebar-foreground hover:bg-card/20 hover:text-sidebar-foreground backdrop-blur-sm hover:scale-[1.02]">
                 <Link to="/simulados">
                   <Trophy className="mr-2 h-4 w-4" /> Novo simulado
                 </Link>
@@ -161,8 +161,8 @@ const Dashboard = () => {
           >
             <div className="flex items-center justify-between mb-4">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-primary-foreground/60">Índice de Prontidão</p>
-                <p className="mt-1 font-display font-extrabold text-4xl text-primary-foreground tabular-nums">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-sidebar-foreground/80">Índice de Prontidão</p>
+                <p className="mt-1 font-display font-extrabold text-4xl text-sidebar-foreground tabular-nums">
                   {readinessCount}<span className="text-accent">%</span>
                 </p>
               </div>
@@ -182,7 +182,7 @@ const Dashboard = () => {
                 className="h-full bg-gradient-to-r from-accent to-accent/60"
               />
             </div>
-            <div className="mt-3 flex items-center justify-between text-[11px] text-primary-foreground/50">
+            <div className="mt-3 flex items-center justify-between text-xs text-sidebar-foreground/75">
               <span>Base</span>
               <span>Aprovação</span>
             </div>
@@ -205,9 +205,9 @@ const Dashboard = () => {
                 <div className={cn("inline-flex h-9 w-9 items-center justify-center rounded-lg border", toneStyles[tone])}>
                   <Icon className="h-4 w-4" />
                 </div>
-                <p className="mt-4 text-[10px] uppercase font-semibold tracking-[0.18em] text-muted-foreground">{label}</p>
+                <p className="mt-4 text-[11px] uppercase font-semibold tracking-[0.18em] text-muted-foreground">{label}</p>
                 <p className="mt-1 font-display font-extrabold text-2xl tabular-nums text-foreground">{value}</p>
-                <p className="text-[11px] text-muted-foreground mt-0.5">{hint}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{hint}</p>
               </CardContent>
             </Card>
           </motion.div>
@@ -220,7 +220,7 @@ const Dashboard = () => {
           <CardContent className="p-6">
             <div className="flex items-start justify-between mb-6">
               <div>
-                <p className="text-[10px] uppercase font-semibold tracking-[0.2em] text-muted-foreground">Performance</p>
+                <p className="text-[11px] uppercase font-semibold tracking-[0.2em] text-muted-foreground">Performance</p>
                 <h2 className="font-display font-extrabold text-xl mt-1">Desempenho semanal</h2>
               </div>
               <Badge variant="outline" className="border-accent/30 text-accent bg-accent/5">
@@ -253,7 +253,7 @@ const Dashboard = () => {
                             value > 0 ? "bg-gradient-to-t from-accent/60 to-accent" : "bg-muted"
                           )}
                         />
-                        <span className="text-[9px] font-mono text-muted-foreground">D{i + 1}</span>
+                        <span className="text-[11px] font-mono text-muted-foreground">D{i + 1}</span>
                       </div>
                     );
                   })}
@@ -261,7 +261,7 @@ const Dashboard = () => {
               </div>
             ) : (
               <div className="py-8 text-center border border-dashed border-border rounded-xl">
-                <Activity className="mx-auto h-8 w-8 text-muted-foreground/40 mb-2" />
+                <Activity className="mx-auto h-8 w-8 text-muted-foreground/65 mb-2" />
                 <p className="text-sm text-muted-foreground">Realize seu primeiro simulado para ativar a telemetria.</p>
                 <Button asChild variant="outline" size="sm" className="mt-4">
                   <Link to="/simulados">Iniciar simulado <ArrowRight className="ml-1 h-3 w-3" /></Link>
@@ -288,7 +288,7 @@ const Dashboard = () => {
                 <Brain className="h-4 w-4 text-accent" />
               </motion.div>
               <div>
-                <p className="text-[10px] uppercase font-semibold tracking-[0.2em] text-muted-foreground">Copilot</p>
+                <p className="text-[11px] uppercase font-semibold tracking-[0.2em] text-muted-foreground">Copilot</p>
                 <h3 className="font-display font-extrabold text-lg leading-tight">Recomendações IA</h3>
               </div>
             </div>
@@ -313,12 +313,12 @@ const Dashboard = () => {
                   whileHover={{ x: 3 }}
                   className="flex items-start gap-3 rounded-lg border border-border/60 bg-background/40 p-3 hover:border-accent/40 cursor-default"
                 >
-                  <div className="mt-0.5 h-6 w-6 shrink-0 rounded-md bg-accent/10 text-accent flex items-center justify-center text-[11px] font-mono font-bold">
+                  <div className="mt-0.5 h-6 w-6 shrink-0 rounded-md bg-accent/10 text-accent flex items-center justify-center text-xs font-mono font-bold">
                     {i + 1}
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-semibold truncate">{rec.title}</p>
-                    <p className="text-[11px] text-muted-foreground truncate">{rec.subtitle}</p>
+                    <p className="text-xs text-muted-foreground truncate">{rec.subtitle}</p>
                   </div>
                 </motion.div>
               ))}
@@ -367,7 +367,7 @@ const Dashboard = () => {
                       <span className={cn("h-2 w-2 rounded-full shrink-0", sevColor)} />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold truncate">{wt.topics?.name ?? "Tópico"}</p>
-                        <p className="text-[11px] text-muted-foreground truncate">{wt.subjects?.name ?? ""}</p>
+                        <p className="text-xs text-muted-foreground truncate">{wt.subjects?.name ?? ""}</p>
                       </div>
                       <div className="w-32 hidden sm:block h-1.5 rounded-full bg-muted overflow-hidden">
                         <motion.div
@@ -392,7 +392,7 @@ const Dashboard = () => {
 
         <Card className="surface border-border/60">
           <CardContent className="p-6">
-            <p className="text-[10px] uppercase font-semibold tracking-[0.2em] text-muted-foreground mb-4">Frota de estudo</p>
+            <p className="text-[11px] uppercase font-semibold tracking-[0.2em] text-muted-foreground mb-4">Frota de estudo</p>
             <ul className="space-y-3.5">
               {secondaryStats.map(({ icon: Icon, label, value }, i) => (
                 <motion.li
@@ -436,12 +436,12 @@ const Dashboard = () => {
                   <Card className="surface border-border/60 hover:border-accent/40 cursor-pointer group h-full">
                     <CardContent className="p-4">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground text-sm font-display font-extrabold shrink-0 group-hover:bg-accent group-hover:text-accent-foreground transition-colors">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-sidebar-foreground text-sm font-display font-extrabold shrink-0 group-hover:bg-accent group-hover:text-accent-foreground transition-colors">
                           {s.name.charAt(0)}
                         </div>
                         <div className="min-w-0">
                           <h3 className="font-semibold text-sm truncate">{s.name}</h3>
-                          <p className="text-[11px] text-muted-foreground">
+                          <p className="text-xs text-muted-foreground">
                             {(s as any).topics?.[0]?.count ?? 0} tópicos
                           </p>
                         </div>

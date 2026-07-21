@@ -251,7 +251,7 @@ const Admin = () => {
                   {(licenseAliases[l.id] ?? []).map((a: any) => (
                     <div key={a.id} className="flex justify-between items-center">
                       <span className="truncate">↳ {a.email}</span>
-                      <button className="text-destructive hover:underline text-[11px]" onClick={() => removeAlias(a.id)}>remover</button>
+                      <button className="text-destructive hover:underline text-xs" onClick={() => removeAlias(a.id)}>remover</button>
                     </div>
                   ))}
                 </div>

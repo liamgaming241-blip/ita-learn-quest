@@ -47,7 +47,7 @@
     --radius: 0.75rem;
 
     --sidebar-background: 218 65% 11%;
-    --sidebar-foreground: 210 30% 88%;
+    --sidebar-foreground: 210 40% 94%;
     --sidebar-primary: 46 65% 52%;
     --sidebar-primary-foreground: 218 65% 11%;
     --sidebar-accent: 218 58% 16%;
@@ -103,7 +103,7 @@
     --ring: 46 65% 52%;
 
     --sidebar-background: 218 70% 5%;
-    --sidebar-foreground: 210 30% 82%;
+    --sidebar-foreground: 210 35% 90%;
     --sidebar-primary: 46 65% 52%;
     --sidebar-primary-foreground: 218 65% 8%;
     --sidebar-accent: 218 55% 12%;
@@ -134,11 +134,17 @@
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'ss01';
     text-rendering: optimizeLegibility;
+    font-size: 15.5px;
+    line-height: 1.6;
+    letter-spacing: -0.005em;
   }
   h1, h2, h3, h4, h5, h6, .font-display {
     font-family: 'Exo 2', 'Inter', sans-serif;
     letter-spacing: -0.015em;
+    line-height: 1.15;
   }
+  p { line-height: 1.65; }
+  small, .text-xs { line-height: 1.55; }
   code, pre, .font-mono {
     font-family: 'JetBrains Mono', ui-monospace, monospace;
   }
