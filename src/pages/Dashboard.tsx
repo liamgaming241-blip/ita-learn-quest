@@ -122,7 +122,7 @@ const Dashboard = () => {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.28, duration: 0.55, ease: [0.22, 1, 0.36, 1] as const }}
-              className="mt-4 font-display font-extrabold text-3xl sm:text-4xl leading-[1.05] text-primary-foreground"
+              className="mt-4 font-display font-extrabold text-3xl sm:text-4xl leading-[1.05] text-sidebar-foreground"
             >
               Bom retorno, <span className="text-gold">{displayName}</span>.
             </motion.h1>
@@ -130,7 +130,7 @@ const Dashboard = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.38, duration: 0.5 }}
-              className="mt-3 max-w-lg text-sm sm:text-base text-primary-foreground/85"
+              className="mt-3 max-w-lg text-sm sm:text-base text-sidebar-foreground/85"
             >
               À frente da aprovação. Sua central estratégica está calibrada — foco no que move o ponteiro hoje.
             </motion.p>
@@ -145,7 +145,7 @@ const Dashboard = () => {
                   <Zap className="mr-2 h-4 w-4" /> Começar sessão
                 </Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="border-border/40 bg-card/10 text-primary-foreground hover:bg-card/20 hover:text-primary-foreground backdrop-blur-sm hover:scale-[1.02]">
+              <Button asChild size="lg" variant="outline" className="border-border/40 bg-card/10 text-sidebar-foreground hover:bg-card/20 hover:text-sidebar-foreground backdrop-blur-sm hover:scale-[1.02]">
                 <Link to="/simulados">
                   <Trophy className="mr-2 h-4 w-4" /> Novo simulado
                 </Link>
@@ -161,8 +161,8 @@ const Dashboard = () => {
           >
             <div className="flex items-center justify-between mb-4">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-primary-foreground/80">Índice de Prontidão</p>
-                <p className="mt-1 font-display font-extrabold text-4xl text-primary-foreground tabular-nums">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-sidebar-foreground/80">Índice de Prontidão</p>
+                <p className="mt-1 font-display font-extrabold text-4xl text-sidebar-foreground tabular-nums">
                   {readinessCount}<span className="text-accent">%</span>
                 </p>
               </div>
@@ -182,7 +182,7 @@ const Dashboard = () => {
                 className="h-full bg-gradient-to-r from-accent to-accent/60"
               />
             </div>
-            <div className="mt-3 flex items-center justify-between text-xs text-primary-foreground/75">
+            <div className="mt-3 flex items-center justify-between text-xs text-sidebar-foreground/75">
               <span>Base</span>
               <span>Aprovação</span>
             </div>
@@ -436,7 +436,7 @@ const Dashboard = () => {
                   <Card className="surface border-border/60 hover:border-accent/40 cursor-pointer group h-full">
                     <CardContent className="p-4">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground text-sm font-display font-extrabold shrink-0 group-hover:bg-accent group-hover:text-accent-foreground transition-colors">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-sidebar-foreground text-sm font-display font-extrabold shrink-0 group-hover:bg-accent group-hover:text-accent-foreground transition-colors">
                           {s.name.charAt(0)}
                         </div>
                         <div className="min-w-0">

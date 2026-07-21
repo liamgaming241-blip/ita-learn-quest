@@ -85,7 +85,7 @@ const Auth = () => {
           transition={{ duration: 11, repeat: Infinity, ease: "easeInOut" }}
         />
 
-        <div className="relative z-10 flex flex-col justify-between p-12 xl:p-16 w-full text-primary-foreground">
+        <div className="relative z-10 flex flex-col justify-between p-12 xl:p-16 w-full text-sidebar-foreground">
           <VanguardLogo />
 
           <div className="max-w-lg">
@@ -109,7 +109,7 @@ const Auth = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.45, duration: 0.6 }}
-              className="mt-5 text-lg text-primary-foreground/85 leading-relaxed"
+              className="mt-5 text-lg text-sidebar-foreground/85 leading-relaxed"
             >
               A plataforma premium de inteligência de estudos para candidatos ao ITA e IME. Precisão, disciplina e dados a cada movimento.
             </motion.p>
@@ -132,13 +132,13 @@ const Auth = () => {
                   <div className="h-10 w-10 shrink-0 rounded-lg border border-accent/25 bg-accent/10 flex items-center justify-center">
                     <Icon className="h-4 w-4 text-accent" />
                   </div>
-                  <span className="text-sm text-primary-foreground/90">{text}</span>
+                  <span className="text-sm text-sidebar-foreground/90">{text}</span>
                 </motion.div>
               ))}
             </motion.div>
           </div>
 
-          <div className="flex items-center gap-6 text-xs text-primary-foreground/65 font-mono uppercase tracking-[0.18em]">
+          <div className="flex items-center gap-6 text-xs text-sidebar-foreground/65 font-mono uppercase tracking-[0.18em]">
             <span>v.01 · Mission Ready</span>
             <span>·</span>
             <span>ITA · IME</span>
