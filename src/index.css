@@ -25,7 +25,7 @@
     --secondary-foreground: 218 65% 11%;
 
     --muted: 218 25% 95%;
-    --muted-foreground: 218 15% 42%;
+    --muted-foreground: 218 25% 32%;
 
     --accent: 46 65% 52%;
     --accent-foreground: 218 65% 11%;
@@ -83,7 +83,7 @@
     --secondary-foreground: 210 40% 98%;
 
     --muted: 218 45% 13%;
-    --muted-foreground: 215 20% 65%;
+    --muted-foreground: 215 30% 78%;
 
     --accent: 46 65% 52%;
     --accent-foreground: 218 65% 11%;
@@ -133,6 +133,7 @@
     @apply bg-background text-foreground font-sans;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'ss01';
+    text-rendering: optimizeLegibility;
   }
   h1, h2, h3, h4, h5, h6, .font-display {
     font-family: 'Exo 2', 'Inter', sans-serif;
