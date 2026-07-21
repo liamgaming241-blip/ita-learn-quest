@@ -140,7 +140,7 @@ const Subjects = () => {
       {subjects.map((s: any) => (
         <Card key={s.id} className="surface hover:border-accent/40 hover:shadow-elegant transition-all cursor-pointer" onClick={() => setSubjectId(s.id)}>
           <CardContent className="p-5 space-y-2">
-            <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Matéria</p>
+            <p className="text-[11px] uppercase tracking-widest text-muted-foreground">Matéria</p>
             <h3 className="font-display font-extrabold text-lg">{s.name}</h3>
             <p className="text-xs text-muted-foreground">
               {Array.isArray(s.topics) ? s.topics[0]?.count ?? 0 : 0} tópicos

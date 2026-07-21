@@ -47,7 +47,7 @@ export const VanguardLogo = ({
           <span className="font-display font-extrabold text-[17px] tracking-[0.16em] text-sidebar-primary-foreground">
             VANGUARD
           </span>
-          <span className="text-[9px] uppercase tracking-[0.24em] text-accent/80 mt-1">
+          <span className="text-[11px] uppercase tracking-[0.24em] text-accent/80 mt-1">
             À frente da aprovação
           </span>
         </div>

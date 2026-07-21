@@ -89,7 +89,7 @@ export const AppLayout = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.08 + sIdx * 0.06, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
             >
-              <p className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-sidebar-foreground/40">
+              <p className="px-3 mb-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-sidebar-foreground/65">
                 {section.label}
               </p>
               <ul className="space-y-0.5">
@@ -114,7 +114,7 @@ export const AppLayout = () => {
                             transition={{ type: "spring", stiffness: 380, damping: 30 }}
                           />
                         )}
-                        <Icon className={cn("h-4 w-4 shrink-0 transition-colors", active ? "text-sidebar-primary" : "text-sidebar-foreground/60 group-hover:text-sidebar-primary")} />
+                        <Icon className={cn("h-4 w-4 shrink-0 transition-colors", active ? "text-sidebar-primary" : "text-sidebar-foreground/80 group-hover:text-sidebar-primary")} />
                         <span>{label}</span>
                       </Link>
                     </li>
@@ -132,7 +132,7 @@ export const AppLayout = () => {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-sidebar-primary-foreground truncate leading-tight">{displayName}</p>
-              <p className="text-[10px] text-sidebar-foreground/50 truncate">{user?.email}</p>
+              <p className="text-[11px] text-sidebar-foreground/75 truncate">{user?.email}</p>
             </div>
           </div>
 
@@ -180,7 +180,7 @@ export const AppLayout = () => {
           </Button>
 
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.22em] text-muted-foreground/70">
+            <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.22em] text-muted-foreground/85">
               <Radar className="h-3 w-3 text-accent" />
               <span>VANGUARD</span>
               <span className="text-border">/</span>
@@ -216,7 +216,7 @@ export const AppLayout = () => {
               <span className="absolute inline-flex h-full w-full rounded-full bg-success opacity-75 pulse-dot"></span>
               <span className="relative inline-flex h-2 w-2 rounded-full bg-success"></span>
             </span>
-            <span className="text-[11px] font-medium text-muted-foreground tracking-wide">Sistemas operacionais</span>
+            <span className="text-xs font-medium text-muted-foreground tracking-wide">Sistemas operacionais</span>
           </div>
 
           <Button variant="ghost" size="icon" onClick={toggleTheme} className="hidden lg:flex hover:scale-110" aria-label="Alternar tema">
