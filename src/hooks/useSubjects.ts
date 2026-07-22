@@ -25,7 +25,7 @@ export const useTopics = (subjectId?: string) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("topics")
-        .select("*, lessons(count)")
+        .select("*, subtopics(count)")
         .eq("subject_id", subjectId!)
         .order("sort_order");
       if (error) throw error;
@@ -35,20 +35,37 @@ export const useTopics = (subjectId?: string) => {
   });
 };
 
-export const useLessons = (topicId?: string) => {
+export const useSubtopics = (topicId?: string) => {
   const { user } = useAuth();
   return useQuery({
-    queryKey: ["lessons", topicId],
+    queryKey: ["subtopics", topicId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("lessons")
-        .select("*")
+        .from("subtopics")
+        .select("*, lessons(count)")
         .eq("topic_id", topicId!)
-        .order("created_at");
+        .order("sort_order");
       if (error) throw error;
       return data;
     },
     enabled: !!topicId && !!user,
+  });
+};
+
+export const useLessons = (subtopicId?: string) => {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["lessons", subtopicId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("lessons")
+        .select("*")
+        .eq("subtopic_id", subtopicId!)
+        .order("created_at");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!subtopicId && !!user,
   });
 };
 
