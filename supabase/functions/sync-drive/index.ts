@@ -190,12 +190,11 @@ Deno.serve(async (req) => {
         const subFolders = kids.filter((f) => f.mimeType === FOLDER);
         const looseFiles = kids.filter((f) => isLessonFile(f.mimeType));
 
-        // Build topic list; add a synthetic "Geral" topic for loose files
-        const topics: { id: string; name: string; path: string; folderIdKey: string }[] = subFolders.map(
-          (f) => ({ id: f.id, name: f.name, path: f.path, folderIdKey: f.id }),
-        );
+        // Topics = subfolders; add a synthetic "Geral" topic for files loose under a subject
+        const topics: { name: string; path: string; folderIdKey: string; parentDriveId: string; synthetic: boolean }[] =
+          subFolders.map((f) => ({ name: f.name, path: f.path, folderIdKey: f.id, parentDriveId: f.id, synthetic: false }));
         if (looseFiles.length > 0) {
-          topics.push({ id: `__loose__${subj.id}`, name: "Geral", path: subj.path, folderIdKey: `subject:${subj.id}` });
+          topics.push({ name: "Geral", path: subj.path, folderIdKey: `subject:${subj.id}`, parentDriveId: subj.id, synthetic: true });
         }
 
         let sortT = 0;
@@ -210,30 +209,63 @@ Deno.serve(async (req) => {
             .single();
           if (tErr || !topicRow) { await log("error", `topic upsert failed: ${t.name}`, { err: tErr?.message }); continue; }
 
-          // Lessons under this topic
-          const lessonFiles = t.id.startsWith("__loose__")
+          // Subtopics = folders inside the topic folder (only for real topics)
+          const topicKids = t.synthetic ? [] : files.filter((f) => f.parents?.[0] === t.parentDriveId);
+          const subSubFolders = topicKids.filter((f) => f.mimeType === FOLDER);
+          const topicLooseFiles = t.synthetic
             ? looseFiles
-            : files.filter((f) => isLessonFile(f.mimeType) && f.path.startsWith(t.path + "/"));
+            : topicKids.filter((f) => isLessonFile(f.mimeType));
 
-          for (const lf of lessonFiles) {
-            const { data: dfRow } = await supabase
-              .from("drive_files").select("id").eq("drive_file_id", lf.id).maybeSingle();
-            const { error: lErr } = await supabase
-              .from("lessons")
+          const subtopics: { name: string; path: string; folderIdKey: string; parentDriveId: string; synthetic: boolean }[] =
+            subSubFolders.map((f) => ({ name: f.name, path: f.path, folderIdKey: f.id, parentDriveId: f.id, synthetic: false }));
+          if (topicLooseFiles.length > 0 || subSubFolders.length === 0) {
+            subtopics.push({
+              name: "Geral",
+              path: t.path,
+              folderIdKey: `topic:${topicRow.id}`,
+              parentDriveId: t.parentDriveId,
+              synthetic: true,
+            });
+          }
+
+          let sortSub = 0;
+          for (const st of subtopics) {
+            const { data: subtopicRow, error: stErr } = await supabase
+              .from("subtopics")
               .upsert(
-                {
-                  topic_id: topicRow.id,
-                  title: lf.name.replace(/\.[^.]+$/, ""),
-                  file_type: fileType(lf.mimeType),
-                  drive_file_id: lf.id,
-                  drive_file_uuid: dfRow?.id ?? null,
-                  file_path: lf.path,
-                  file_size: lf.size ? Number(lf.size) : null,
-                  processing_status: "ready",
-                },
-                { onConflict: "drive_file_id" },
-              );
-            if (lErr) await log("error", `lesson upsert failed: ${lf.name}`, { err: lErr.message }, lf.id);
+                { topic_id: topicRow.id, drive_folder_id: st.folderIdKey, name: st.name, folder_path: st.path, sort_order: sortSub++ },
+                { onConflict: "drive_folder_id" },
+              )
+              .select("id")
+              .single();
+            if (stErr || !subtopicRow) { await log("error", `subtopic upsert failed: ${st.name}`, { err: stErr?.message }); continue; }
+
+            // Lesson files: for synthetic subtopics use the topic's loose files; otherwise recurse under the subtopic folder
+            const lessonFiles = st.synthetic
+              ? topicLooseFiles
+              : files.filter((f) => isLessonFile(f.mimeType) && f.path.startsWith(st.path + "/"));
+
+            for (const lf of lessonFiles) {
+              const { data: dfRow } = await supabase
+                .from("drive_files").select("id").eq("drive_file_id", lf.id).maybeSingle();
+              const { error: lErr } = await supabase
+                .from("lessons")
+                .upsert(
+                  {
+                    topic_id: topicRow.id,
+                    subtopic_id: subtopicRow.id,
+                    title: lf.name.replace(/\.[^.]+$/, ""),
+                    file_type: fileType(lf.mimeType),
+                    drive_file_id: lf.id,
+                    drive_file_uuid: dfRow?.id ?? null,
+                    file_path: lf.path,
+                    file_size: lf.size ? Number(lf.size) : null,
+                    processing_status: "ready",
+                  },
+                  { onConflict: "drive_file_id" },
+                );
+              if (lErr) await log("error", `lesson upsert failed: ${lf.name}`, { err: lErr.message }, lf.id);
+            }
           }
         }
       }

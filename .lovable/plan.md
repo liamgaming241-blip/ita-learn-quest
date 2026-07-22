@@ -1,64 +1,52 @@
-# Plan — Fix Subscription Email Matching
+# Subtopics: full-stack rollout
 
-## Problem
-Signup rejects paying users because the email on their Kiwify purchase doesn't literally equal the one they type. Failure modes seen / likely:
-- Gmail dot/plus aliases (`joao.silva+kwify@gmail.com` vs `joaosilva@gmail.com`)
-- Whitespace, invisible unicode, or trailing punctuation from Kiwify payload
-- Two different emails: purchase email vs preferred signup email
-- Webhook occasionally stores an alt email (buyer vs student vs member)
-- No visibility to the user about what email the license is under
+Introduce a `subtopics` layer between `topics` and `lessons` and thread it through sync, UI, admin, questions, and analytics without losing existing data.
 
-Current gate only does `lower(email) = lower(email)` exact match.
+## 1. Database migration
 
-## Approach — canonical email + alias table + smarter gate
+- Create `public.subtopics` (`id`, `topic_id` FK, `drive_folder_id` unique, `name`, `description`, `slug`, `folder_path`, `sort_order`, `created_at`, `updated_at`) with RLS mirroring `topics` (read for authenticated, write for admin), GRANTs, and `updated_at` trigger.
+- Add nullable `subtopic_id` to `lessons`, `questions`, `weak_topics`, `user_progress` (FK on cascade rules matching existing columns).
+- Backfill: for every topic that currently has lessons, create a default subtopic `Geral` (slug `geral`) and set each lesson's `subtopic_id` to it. Same treatment for `questions`/`weak_topics` where a `topic_id` exists.
+- Keep `topic_id` on lessons/questions for backward compatibility (denormalized), populated from the subtopic's parent.
 
-### 1. Canonical email helper (DB)
-New `public.canonical_email(text)` immutable function:
-- lowercase + trim
-- strip zero-width / control chars
-- split local/domain
-- for gmail/googlemail: remove dots in local part, drop `+tag`, force `@gmail.com`
-- for other providers: only drop `+tag`
+## 2. Drive sync (`sync-drive`)
 
-Store canonical form alongside raw email on licenses.
+Update the materializer to walk one more level:
 
-### 2. Schema changes (single migration)
-- `ALTER TABLE public.licenses ADD COLUMN canonical_email text`
-- Backfill via `UPDATE ... SET canonical_email = public.canonical_email(email)`
-- Index: `CREATE INDEX ON public.licenses (canonical_email)`
-- Update `normalize_license_email` trigger to also set `canonical_email`
-- New table `public.license_email_aliases (license_id, email, canonical_email, added_by, created_at)` with GRANTs + RLS (admins manage, licence-owner can read own)
-- Rewrite `email_has_active_license(_email)`:
-  ```
-  active if EXISTS license where canonical_email = canonical(_email)
-                        or exists alias with canonical match
-  ```
-- Same update inside `get_my_access` and `admin_lookup_access` so admin diagnostics and access gate use the same rule.
+```text
+root / Subject / Topic / Subtopic / lesson-files
+```
 
-### 3. Kiwify webhook
-- Compute canonical on write; upsert license `ON CONFLICT (canonical_email)` (or fallback to email) so buyer/customer/student variants collapse to one row.
-- When payload contains multiple emails (buyer + student), insert the extras as aliases automatically.
+- Top-level folders → `subjects` (unchanged).
+- Second-level folders → `topics`.
+- Third-level folders → `subtopics` (new upsert on `drive_folder_id`).
+- Files directly under a topic (no third-level folder) fall into a synthetic `Geral` subtopic for that topic.
+- Files directly under a subject (no topic) keep today's synthetic `Geral` topic and get a `Geral` subtopic under it.
+- Lessons upsert with both `topic_id` and `subtopic_id` populated.
+- Lesson pruning still uses drive file IDs.
 
-### 4. Signup edge function
-- Use new canonical matcher.
-- On rejection, return structured info: `{ error, hint: "Sua compra pode estar sob outro email — contate o suporte" }`.
-- Accept optional `purchase_email` field: if provided and different from signup email, verify it has active license, then create the account under the signup email AND add signup email as alias.
+## 3. Frontend navigation
 
-### 5. Auth UI (`src/pages/Auth.tsx`)
-- On 403 signup failure, show a secondary field "Email usado na compra (se diferente)" and retry with `purchase_email`.
-- Client-side canonical preview isn't needed; server is source of truth.
+`src/pages/Subjects.tsx` becomes a 4-level drill-down: Subject → Topic → Subtopic → Lesson list → Lesson viewer, with a breadcrumb header (`Matéria › Tópico › Subtópico › Aula`). New `useSubtopics(topicId)` hook, and `useLessons` gains a `subtopicId` filter.
 
-### 6. Admin panel (`src/pages/Admin.tsx`)
-- In Access Diagnostics: show canonical form + linked aliases.
-- New "Add email alias" action on a license row (calls new RPC `admin_add_license_alias(license_id, email)`).
-- Bulk import already exists — pipe through canonical normalization.
+## 4. Admin panel
+
+Add a "Estrutura de Conteúdo" section: tree of subjects/topics/subtopics with actions to create/rename/reorder/delete subtopics and move lessons between subtopics (client calls parameterized RPCs — no raw SQL from client). Deleting a subtopic cascades to its lessons via FK.
+
+## 5. Questions & simulations
+
+- `questions` gets `subtopic_id`; filters on Questions page and simulation generator accept subject/topic/subtopic.
+- Simulation scoring aggregates weak areas at all three levels.
+
+## 6. Analytics / dashboard
+
+- `weak_topics` gains `subtopic_id`; WeakTopics page groups by subject → topic → subtopic.
+- Dashboard progress rings compute per-subject, per-topic, per-subtopic completion from `user_progress`.
 
 ## Technical notes
-- All matching goes through `canonical_email()` — one source of truth.
-- Aliases keep original emails for audit; matching is on canonical form.
-- Backward compatible: existing exact-match rows keep working because canonical of themselves = themselves.
 
-## Out of scope
-- Changing Kiwify product config
-- Auth provider changes (still email/password)
-- Frontend redesign
+- Column additions are nullable to keep existing rows valid; backfill runs in the same migration.
+- All new RPCs (`admin_create_subtopic`, `admin_update_subtopic`, `admin_delete_subtopic`, `admin_move_lesson`) are `security definer` with `has_role(auth.uid(),'admin')` checks.
+- Frontend types regenerate after the migration approval; UI + edge-function code lands in the follow-up turn.
+
+Reply "go" to run the migration; I'll ship the edge function and UI changes right after it's approved.
