@@ -178,6 +178,7 @@ export type Database = {
           indexed_at: string
           processing_error: string | null
           processing_status: string
+          subtopic_id: string | null
           title: string
           topic_id: string
         }
@@ -194,6 +195,7 @@ export type Database = {
           indexed_at?: string
           processing_error?: string | null
           processing_status?: string
+          subtopic_id?: string | null
           title: string
           topic_id: string
         }
@@ -210,6 +212,7 @@ export type Database = {
           indexed_at?: string
           processing_error?: string | null
           processing_status?: string
+          subtopic_id?: string | null
           title?: string
           topic_id?: string
         }
@@ -219,6 +222,13 @@ export type Database = {
             columns: ["drive_file_uuid"]
             isOneToOne: false
             referencedRelation: "drive_files"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lessons_subtopic_id_fkey"
+            columns: ["subtopic_id"]
+            isOneToOne: false
+            referencedRelation: "subtopics"
             referencedColumns: ["id"]
           },
           {
@@ -470,6 +480,7 @@ export type Database = {
           options: Json
           question_text: string
           subject_id: string | null
+          subtopic_id: string | null
           topic_id: string | null
         }
         Insert: {
@@ -482,6 +493,7 @@ export type Database = {
           options: Json
           question_text: string
           subject_id?: string | null
+          subtopic_id?: string | null
           topic_id?: string | null
         }
         Update: {
@@ -494,6 +506,7 @@ export type Database = {
           options?: Json
           question_text?: string
           subject_id?: string | null
+          subtopic_id?: string | null
           topic_id?: string | null
         }
         Relationships: [
@@ -509,6 +522,13 @@ export type Database = {
             columns: ["subject_id"]
             isOneToOne: false
             referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "questions_subtopic_id_fkey"
+            columns: ["subtopic_id"]
+            isOneToOne: false
+            referencedRelation: "subtopics"
             referencedColumns: ["id"]
           },
           {
@@ -654,6 +674,53 @@ export type Database = {
             columns: ["plan_id"]
             isOneToOne: false
             referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subtopics: {
+        Row: {
+          created_at: string
+          description: string | null
+          drive_folder_id: string | null
+          folder_path: string | null
+          id: string
+          name: string
+          slug: string | null
+          sort_order: number | null
+          topic_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          drive_folder_id?: string | null
+          folder_path?: string | null
+          id?: string
+          name: string
+          slug?: string | null
+          sort_order?: number | null
+          topic_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          drive_folder_id?: string | null
+          folder_path?: string | null
+          id?: string
+          name?: string
+          slug?: string | null
+          sort_order?: number | null
+          topic_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subtopics_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
             referencedColumns: ["id"]
           },
         ]
@@ -845,6 +912,7 @@ export type Database = {
           last_accessed_at: string | null
           lesson_id: string | null
           subject_id: string | null
+          subtopic_id: string | null
           time_spent_seconds: number | null
           topic_id: string | null
           user_id: string
@@ -856,6 +924,7 @@ export type Database = {
           last_accessed_at?: string | null
           lesson_id?: string | null
           subject_id?: string | null
+          subtopic_id?: string | null
           time_spent_seconds?: number | null
           topic_id?: string | null
           user_id: string
@@ -867,6 +936,7 @@ export type Database = {
           last_accessed_at?: string | null
           lesson_id?: string | null
           subject_id?: string | null
+          subtopic_id?: string | null
           time_spent_seconds?: number | null
           topic_id?: string | null
           user_id?: string
@@ -884,6 +954,13 @@ export type Database = {
             columns: ["subject_id"]
             isOneToOne: false
             referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_progress_subtopic_id_fkey"
+            columns: ["subtopic_id"]
+            isOneToOne: false
+            referencedRelation: "subtopics"
             referencedColumns: ["id"]
           },
           {
@@ -925,6 +1002,7 @@ export type Database = {
           last_calculated_at: string | null
           severity: string | null
           subject_id: string
+          subtopic_id: string | null
           topic_id: string
           total_attempts: number | null
           user_id: string
@@ -937,6 +1015,7 @@ export type Database = {
           last_calculated_at?: string | null
           severity?: string | null
           subject_id: string
+          subtopic_id?: string | null
           topic_id: string
           total_attempts?: number | null
           user_id: string
@@ -949,6 +1028,7 @@ export type Database = {
           last_calculated_at?: string | null
           severity?: string | null
           subject_id?: string
+          subtopic_id?: string | null
           topic_id?: string
           total_attempts?: number | null
           user_id?: string
@@ -959,6 +1039,13 @@ export type Database = {
             columns: ["subject_id"]
             isOneToOne: false
             referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "weak_topics_subtopic_id_fkey"
+            columns: ["subtopic_id"]
+            isOneToOne: false
+            referencedRelation: "subtopics"
             referencedColumns: ["id"]
           },
           {
@@ -979,11 +1066,34 @@ export type Database = {
         Args: { _email: string; _license_id: string }
         Returns: string
       }
+      admin_create_subtopic: {
+        Args: {
+          _description?: string
+          _name: string
+          _sort_order?: number
+          _topic_id: string
+        }
+        Returns: string
+      }
+      admin_delete_subtopic: { Args: { _id: string }; Returns: undefined }
       admin_grant_licenses: {
         Args: { _emails: string[]; _product_code?: string }
         Returns: number
       }
       admin_lookup_access: { Args: { _email: string }; Returns: Json }
+      admin_move_lesson: {
+        Args: { _lesson_id: string; _subtopic_id: string }
+        Returns: undefined
+      }
+      admin_update_subtopic: {
+        Args: {
+          _description?: string
+          _id: string
+          _name: string
+          _sort_order?: number
+        }
+        Returns: undefined
+      }
       canonical_email: { Args: { _email: string }; Returns: string }
       email_has_active_license: { Args: { _email: string }; Returns: boolean }
       get_my_access: { Args: never; Returns: Json }
