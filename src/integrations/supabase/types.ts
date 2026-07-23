@@ -92,6 +92,66 @@ export type Database = {
         }
         Relationships: []
       }
+      exam_sessions: {
+        Row: {
+          answers: Json
+          correct: number
+          created_at: string
+          duration_seconds: number | null
+          id: string
+          institution: string | null
+          mode: string
+          phase: string | null
+          question_ids: string[]
+          score: number | null
+          started_at: string
+          status: string
+          submitted_at: string | null
+          total: number
+          updated_at: string
+          user_id: string
+          year: number | null
+        }
+        Insert: {
+          answers?: Json
+          correct?: number
+          created_at?: string
+          duration_seconds?: number | null
+          id?: string
+          institution?: string | null
+          mode?: string
+          phase?: string | null
+          question_ids?: string[]
+          score?: number | null
+          started_at?: string
+          status?: string
+          submitted_at?: string | null
+          total?: number
+          updated_at?: string
+          user_id: string
+          year?: number | null
+        }
+        Update: {
+          answers?: Json
+          correct?: number
+          created_at?: string
+          duration_seconds?: number | null
+          id?: string
+          institution?: string | null
+          mode?: string
+          phase?: string | null
+          question_ids?: string[]
+          score?: number | null
+          started_at?: string
+          status?: string
+          submitted_at?: string | null
+          total?: number
+          updated_at?: string
+          user_id?: string
+          year?: number | null
+        }
+        Relationships: []
+      }
       file_versions: {
         Row: {
           changed_at: string
@@ -469,45 +529,264 @@ export type Database = {
         }
         Relationships: []
       }
+      question_attempts: {
+        Row: {
+          created_at: string
+          exam_session_id: string | null
+          id: string
+          is_correct: boolean
+          mode: string
+          question_id: string
+          selected_option: string | null
+          time_spent_seconds: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          exam_session_id?: string | null
+          id?: string
+          is_correct?: boolean
+          mode?: string
+          question_id: string
+          selected_option?: string | null
+          time_spent_seconds?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          exam_session_id?: string | null
+          id?: string
+          is_correct?: boolean
+          mode?: string
+          question_id?: string
+          selected_option?: string | null
+          time_spent_seconds?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "question_attempts_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      question_reports: {
+        Row: {
+          created_at: string
+          details: string | null
+          id: string
+          question_id: string
+          reason: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          details?: string | null
+          id?: string
+          question_id: string
+          reason: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          details?: string | null
+          id?: string
+          question_id?: string
+          reason?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "question_reports_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      question_tags: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          slug?: string
+        }
+        Relationships: []
+      }
+      question_user_state: {
+        Row: {
+          attempts: number
+          avg_time_seconds: number
+          confidence: number
+          correct: number
+          is_bookmarked: boolean
+          is_favorite: boolean
+          last_attempt_at: string | null
+          mark_for_review: boolean
+          next_review_at: string | null
+          notes: string | null
+          question_id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          avg_time_seconds?: number
+          confidence?: number
+          correct?: number
+          is_bookmarked?: boolean
+          is_favorite?: boolean
+          last_attempt_at?: string | null
+          mark_for_review?: boolean
+          next_review_at?: string | null
+          notes?: string | null
+          question_id: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          avg_time_seconds?: number
+          confidence?: number
+          correct?: number
+          is_bookmarked?: boolean
+          is_favorite?: boolean
+          last_attempt_at?: string | null
+          mark_for_review?: boolean
+          next_review_at?: string | null
+          notes?: string | null
+          question_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "question_user_state_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       questions: {
         Row: {
+          answer_key_url: string | null
+          attachments: Json
           correct_option: string
           created_at: string
           difficulty: string | null
+          estimated_time_seconds: number | null
+          exam_code: string | null
           explanation: string | null
           id: string
+          images: Json
+          import_batch_id: string | null
+          institution: string | null
           lesson_id: string | null
+          official_answer: string | null
           options: Json
+          phase: string | null
+          question_number: number | null
           question_text: string
+          search_tsv: unknown
+          source: string | null
+          status: string
           subject_id: string | null
           subtopic_id: string | null
+          tags: string[]
+          title: string | null
           topic_id: string | null
+          updated_at: string
+          year: number | null
         }
         Insert: {
+          answer_key_url?: string | null
+          attachments?: Json
           correct_option: string
           created_at?: string
           difficulty?: string | null
+          estimated_time_seconds?: number | null
+          exam_code?: string | null
           explanation?: string | null
           id?: string
+          images?: Json
+          import_batch_id?: string | null
+          institution?: string | null
           lesson_id?: string | null
+          official_answer?: string | null
           options: Json
+          phase?: string | null
+          question_number?: number | null
           question_text: string
+          search_tsv?: unknown
+          source?: string | null
+          status?: string
           subject_id?: string | null
           subtopic_id?: string | null
+          tags?: string[]
+          title?: string | null
           topic_id?: string | null
+          updated_at?: string
+          year?: number | null
         }
         Update: {
+          answer_key_url?: string | null
+          attachments?: Json
           correct_option?: string
           created_at?: string
           difficulty?: string | null
+          estimated_time_seconds?: number | null
+          exam_code?: string | null
           explanation?: string | null
           id?: string
+          images?: Json
+          import_batch_id?: string | null
+          institution?: string | null
           lesson_id?: string | null
+          official_answer?: string | null
           options?: Json
+          phase?: string | null
+          question_number?: number | null
           question_text?: string
+          search_tsv?: unknown
+          source?: string | null
+          status?: string
           subject_id?: string | null
           subtopic_id?: string | null
+          tags?: string[]
+          title?: string | null
           topic_id?: string | null
+          updated_at?: string
+          year?: number | null
         }
         Relationships: [
           {
@@ -1080,6 +1359,7 @@ export type Database = {
         Args: { _emails: string[]; _product_code?: string }
         Returns: number
       }
+      admin_import_questions: { Args: { _rows: Json }; Returns: Json }
       admin_lookup_access: { Args: { _email: string }; Returns: Json }
       admin_move_lesson: {
         Args: { _lesson_id: string; _subtopic_id: string }
@@ -1108,6 +1388,33 @@ export type Database = {
       link_signup_email_to_license: {
         Args: { _purchase_email: string; _signup_email: string }
         Returns: string
+      }
+      record_question_attempt: {
+        Args: {
+          _exam_session_id?: string
+          _mode?: string
+          _question_id: string
+          _selected: string
+          _time_spent?: number
+        }
+        Returns: Json
+      }
+      start_exam_session: {
+        Args: {
+          _institution: string
+          _mode?: string
+          _phase?: string
+          _year: number
+        }
+        Returns: string
+      }
+      submit_exam_session: {
+        Args: { _answers: Json; _session_id: string }
+        Returns: Json
+      }
+      toggle_question_flag: {
+        Args: { _flag: string; _question_id: string }
+        Returns: Json
       }
     }
     Enums: {
