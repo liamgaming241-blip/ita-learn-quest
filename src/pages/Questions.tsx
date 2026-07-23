@@ -339,7 +339,7 @@ const ExamRunner = ({ session, onAnswer, onNav, onFinish, submitting }: any) => 
         total={session.qids.length}
         onNext={() => session.idx < session.qids.length - 1 ? onNav(session.idx + 1) : undefined}
         onPrev={() => session.idx > 0 ? onNav(session.idx - 1) : undefined}
-        onAnswered={undefined}
+        onAnswered={(_ok, selected) => onAnswer(qid, selected)}
       />
       <div className="grid grid-cols-10 gap-1">
         {session.qids.map((qq: string, i: number) => (
