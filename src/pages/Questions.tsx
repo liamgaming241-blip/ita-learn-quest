@@ -1,199 +1,351 @@
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { useQuestions, useSubjects } from "@/hooks/useSubjects";
+import { useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CheckCircle, XCircle, FileQuestion, ArrowRight } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useSubjects, useTopics, useSubtopics } from "@/hooks/useSubjects";
+import { INSTITUTIONS, QbFilters, useExamCatalog, useExamSessions, useQbQuestions, useQbRecommendations, useQbStats, useStartExam, useSubmitExam } from "@/hooks/useQuestionBank";
+import { QuestionSolver } from "@/components/qb/QuestionSolver";
+import { Flame, Sparkles, Star, Target, Timer, TrendingUp, PlayCircle, Search, X } from "lucide-react";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+
+const YEARS = Array.from({ length: 20 }, (_, i) => new Date().getFullYear() - i);
 
 const Questions = () => {
-  const [subjectFilter, setSubjectFilter] = useState<string>("all");
-  const [currentIdx, setCurrentIdx] = useState(0);
-  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
-  const [showExplanation, setShowExplanation] = useState(false);
+  const [tab, setTab] = useState("praticar");
+  const [filters, setFilters] = useState<QbFilters>({ page: 0, pageSize: 25 });
+  const [solverId, setSolverId] = useState<string | null>(null);
+  const [solverIdx, setSolverIdx] = useState(0);
+
   const { data: subjects } = useSubjects();
-  const { data: questions, isLoading } = useQuestions(
-    subjectFilter !== "all" ? { subjectId: subjectFilter } : undefined
-  );
+  const { data: topics } = useTopics(filters.subjectId);
+  const { data: subtopics } = useSubtopics(filters.topicId);
+  const { data: list, isLoading } = useQbQuestions(filters);
+  const { data: stats } = useQbStats();
+  const { data: rec } = useQbRecommendations();
+  const { data: catalog } = useExamCatalog();
+  const { data: sessions } = useExamSessions();
+  const startExam = useStartExam();
+  const submitExam = useSubmitExam();
 
-  const current = questions?.[currentIdx];
-  const options = current?.options as { label: string; text: string }[] | undefined;
-  const total = questions?.length ?? 0;
-  const progressPct = total > 0 ? ((currentIdx + (showExplanation ? 1 : 0)) / total) * 100 : 0;
+  const rows = list?.rows ?? [];
+  const total = list?.count ?? 0;
 
-  const handleAnswer = (label: string) => {
-    setSelectedAnswer(label);
-    setShowExplanation(true);
+  const updateFilter = (patch: Partial<QbFilters>) =>
+    setFilters(f => ({ ...f, ...patch, page: 0 }));
+
+  const solverList = solverId ? rows : [];
+  const solverQid = solverId ?? (rows[solverIdx]?.id ?? null);
+
+  const [examSession, setExamSession] = useState<{ id: string; qids: string[]; answers: Record<string, string>; idx: number } | null>(null);
+
+  const beginExam = async (institution: string, year: number, phase: string | null) => {
+    try {
+      const id = await startExam.mutateAsync({ institution, year, phase, mode: "exam" });
+      const { data } = await supabase.from("exam_sessions").select("question_ids").eq("id", id).maybeSingle();
+      const qids = ((data?.question_ids as any) ?? []) as string[];
+      setExamSession({ id, qids, answers: {}, idx: 0 });
+      setTab("praticar");
+    } catch (e: any) { toast.error(e.message); }
   };
 
-  const nextQuestion = () => {
-    setSelectedAnswer(null);
-    setShowExplanation(false);
-    setCurrentIdx((i) => Math.min(i + 1, total - 1));
+  const finishExam = async () => {
+    if (!examSession) return;
+    try {
+      const res: any = await submitExam.mutateAsync({ session_id: examSession.id, answers: examSession.answers });
+      toast.success(`Prova finalizada: ${res.correct}/${res.total} (${Math.round(res.score)}%)`);
+      setExamSession(null);
+    } catch (e: any) { toast.error(e.message); }
   };
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex-1 min-w-0">
-          {total > 0 && (
-            <div className="mt-1 h-1.5 max-w-md rounded-full bg-muted overflow-hidden">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${progressPct}%` }}
-                transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                className="h-full bg-gradient-to-r from-accent to-accent/60"
+      <header className="flex items-end justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="font-display font-black text-2xl tracking-tight">Banco de Questões</h1>
+          <p className="text-sm text-muted-foreground">Provas oficiais ITA e IME · filtros inteligentes · progresso pessoal</p>
+        </div>
+        {stats && (
+          <div className="flex gap-2 flex-wrap">
+            <Stat icon={<Target className="h-3.5 w-3.5" />} label="Acurácia" value={`${stats.accuracy}%`} />
+            <Stat icon={<Flame className="h-3.5 w-3.5" />} label="Streak" value={`${stats.streak}d`} />
+            <Stat icon={<Star className="h-3.5 w-3.5" />} label="Dominadas" value={stats.mastered} />
+            <Stat icon={<Timer className="h-3.5 w-3.5" />} label="Média" value={`${stats.avgTime}s`} />
+          </div>
+        )}
+      </header>
+
+      <Tabs value={tab} onValueChange={setTab}>
+        <TabsList>
+          <TabsTrigger value="praticar">Praticar</TabsTrigger>
+          <TabsTrigger value="provas">Provas Anteriores</TabsTrigger>
+          <TabsTrigger value="progresso">Progresso</TabsTrigger>
+          <TabsTrigger value="historico">Histórico</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="praticar" className="space-y-4">
+          {examSession ? (
+            <ExamRunner
+              session={examSession}
+              onAnswer={(qid, label) => setExamSession(s => s ? ({ ...s, answers: { ...s.answers, [qid]: label } }) : s)}
+              onNav={(idx) => setExamSession(s => s ? ({ ...s, idx }) : s)}
+              onFinish={finishExam}
+              submitting={submitExam.isPending}
+            />
+          ) : solverQid ? (
+            <div className="space-y-3">
+              <Button variant="ghost" size="sm" onClick={() => setSolverId(null)}><X className="h-4 w-4 mr-1" />Voltar à lista</Button>
+              <QuestionSolver
+                questionId={solverQid}
+                mode="learning"
+                index={solverIdx}
+                total={rows.length}
+                onNext={() => { setSolverIdx(i => Math.min(rows.length - 1, i + 1)); setSolverId(rows[Math.min(rows.length - 1, solverIdx + 1)]?.id ?? null); }}
+                onPrev={() => { setSolverIdx(i => Math.max(0, i - 1)); setSolverId(rows[Math.max(0, solverIdx - 1)]?.id ?? null); }}
               />
             </div>
+          ) : (
+            <>
+              <FiltersBar
+                filters={filters}
+                onChange={updateFilter}
+                subjects={subjects ?? []}
+                topics={topics ?? []}
+                subtopics={subtopics ?? []}
+              />
+              {rec && rec.review.length > 0 && (
+                <Card className="surface-elevated border-accent/30">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Sparkles className="h-4 w-4 text-accent" />
+                      <span className="text-xs font-semibold uppercase tracking-wider text-accent">Recomendadas para revisar</span>
+                    </div>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {rec.review.slice(0, 6).map((r: any) => (
+                        <button key={r.id} className="text-left rounded-md border border-border/60 p-2 hover:border-accent/60"
+                          onClick={() => { setSolverId(r.id); setSolverIdx(0); }}>
+                          <div className="text-xs text-muted-foreground">{r.institution ?? "—"}{r.year ? ` · ${r.year}` : ""} · {(r as any).subjects?.name ?? ""}</div>
+                          <div className="text-sm line-clamp-2">{r.title ?? r.question_text}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              <QuestionList rows={rows} total={total} isLoading={isLoading} onOpen={(id, idx) => { setSolverId(id); setSolverIdx(idx); }}
+                page={filters.page ?? 0} pageSize={filters.pageSize ?? 25} onPage={(p) => setFilters(f => ({ ...f, page: p }))} />
+            </>
           )}
-        </div>
-        <Select
-          value={subjectFilter}
-          onValueChange={(v) => { setSubjectFilter(v); setCurrentIdx(0); setSelectedAnswer(null); setShowExplanation(false); }}
-        >
-          <SelectTrigger className="w-52">
-            <SelectValue placeholder="Filtrar matéria" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todas as matérias</SelectItem>
-            {subjects?.map((s) => (
-              <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+        </TabsContent>
+
+        <TabsContent value="provas" className="space-y-3">
+          <p className="text-sm text-muted-foreground">Resolva provas oficiais completas em modo cronometrado.</p>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {(catalog ?? []).map(e => (
+              <Card key={`${e.institution}-${e.year}-${e.phase ?? ""}`} className="surface-elevated hover:border-accent/50 transition">
+                <CardContent className="p-4 flex items-center justify-between gap-3">
+                  <div>
+                    <div className="font-display font-bold">{e.institution} {e.year}{e.phase ? ` · ${e.phase}` : ""}</div>
+                    <div className="text-xs text-muted-foreground">{e.count} questões</div>
+                  </div>
+                  <Button size="sm" onClick={() => beginExam(e.institution, e.year, e.phase)} disabled={startExam.isPending}
+                    className="gradient-gold text-accent-foreground"><PlayCircle className="h-4 w-4 mr-1" />Iniciar</Button>
+                </CardContent>
+              </Card>
             ))}
-          </SelectContent>
-        </Select>
+            {(!catalog || catalog.length === 0) && (
+              <p className="text-sm text-muted-foreground">Nenhuma prova disponível ainda. Peça ao administrador para importar questões.</p>
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="progresso" className="space-y-3">
+          {stats ? (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <BigStat label="Questões respondidas" value={stats.total} icon={<TrendingUp className="h-4 w-4" />} />
+              <BigStat label="Acurácia" value={`${stats.accuracy}%`} icon={<Target className="h-4 w-4" />} />
+              <BigStat label="Streak de estudo" value={`${stats.streak} dias`} icon={<Flame className="h-4 w-4" />} />
+              <BigStat label="Dominadas" value={stats.mastered} icon={<Star className="h-4 w-4" />} />
+              <Card className="surface-elevated sm:col-span-2 lg:col-span-4"><CardContent className="p-4">
+                <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Atividade (90 dias)</div>
+                <div className="grid grid-flow-col grid-rows-7 gap-1">
+                  {stats.days.map(d => (
+                    <div key={d.date} title={`${d.date}: ${d.count}`}
+                      className="w-3 h-3 rounded-sm"
+                      style={{ background: d.count === 0 ? "hsl(var(--muted))" : `hsl(var(--accent) / ${Math.min(0.2 + d.count / 10, 1)})` }} />
+                  ))}
+                </div>
+              </CardContent></Card>
+            </div>
+          ) : <p className="text-sm text-muted-foreground">Carregando…</p>}
+        </TabsContent>
+
+        <TabsContent value="historico" className="space-y-2">
+          {(sessions ?? []).length === 0 && <p className="text-sm text-muted-foreground">Nenhuma prova finalizada ainda.</p>}
+          {(sessions ?? []).map(s => (
+            <Card key={s.id} className="surface"><CardContent className="p-3 flex items-center justify-between">
+              <div>
+                <div className="font-medium">{s.institution} {s.year} <span className="text-xs text-muted-foreground">· {s.status}</span></div>
+                <div className="text-xs text-muted-foreground">{new Date(s.created_at).toLocaleString()}</div>
+              </div>
+              <div className="text-sm tabular-nums">{s.correct}/{s.total} · <span className="text-accent">{s.score ? Math.round(Number(s.score)) : 0}%</span></div>
+            </CardContent></Card>
+          ))}
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+};
+
+const Stat = ({ icon, label, value }: { icon: React.ReactNode; label: string; value: React.ReactNode }) => (
+  <div className="rounded-md border border-border/60 bg-card/50 px-3 py-1.5 flex items-center gap-2 text-xs">
+    <span className="text-accent">{icon}</span>
+    <span className="text-muted-foreground">{label}</span>
+    <span className="font-mono tabular-nums font-semibold">{value}</span>
+  </div>
+);
+
+const BigStat = ({ icon, label, value }: { icon: React.ReactNode; label: string; value: React.ReactNode }) => (
+  <Card className="surface-elevated"><CardContent className="p-4">
+    <div className="flex items-center gap-2 text-xs text-muted-foreground uppercase tracking-wider">{icon}{label}</div>
+    <div className="text-2xl font-display font-black mt-1 tabular-nums">{value}</div>
+  </CardContent></Card>
+);
+
+const FiltersBar = ({ filters, onChange, subjects, topics, subtopics }: any) => (
+  <Card className="surface"><CardContent className="p-3 grid gap-2 md:grid-cols-6">
+    <div className="relative md:col-span-2">
+      <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+      <Input placeholder="Buscar por palavra-chave" className="pl-8" value={filters.q ?? ""} onChange={e => onChange({ q: e.target.value })} />
+    </div>
+    <Select value={filters.institution ?? "all"} onValueChange={v => onChange({ institution: v === "all" ? undefined : v })}>
+      <SelectTrigger><SelectValue placeholder="Banca" /></SelectTrigger>
+      <SelectContent>
+        <SelectItem value="all">Todas bancas</SelectItem>
+        {INSTITUTIONS.map(i => <SelectItem key={i} value={i}>{i}</SelectItem>)}
+      </SelectContent>
+    </Select>
+    <Select value={filters.year ? String(filters.year) : "all"} onValueChange={v => onChange({ year: v === "all" ? null : Number(v) })}>
+      <SelectTrigger><SelectValue placeholder="Ano" /></SelectTrigger>
+      <SelectContent>
+        <SelectItem value="all">Todos anos</SelectItem>
+        {YEARS.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
+      </SelectContent>
+    </Select>
+    <Select value={filters.subjectId ?? "all"} onValueChange={v => onChange({ subjectId: v === "all" ? undefined : v, topicId: undefined, subtopicId: undefined })}>
+      <SelectTrigger><SelectValue placeholder="Matéria" /></SelectTrigger>
+      <SelectContent>
+        <SelectItem value="all">Todas matérias</SelectItem>
+        {subjects.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+      </SelectContent>
+    </Select>
+    <Select value={filters.difficulty ?? "all"} onValueChange={v => onChange({ difficulty: v === "all" ? undefined : v })}>
+      <SelectTrigger><SelectValue placeholder="Dificuldade" /></SelectTrigger>
+      <SelectContent>
+        <SelectItem value="all">Todas</SelectItem>
+        <SelectItem value="easy">Fácil</SelectItem>
+        <SelectItem value="medium">Média</SelectItem>
+        <SelectItem value="hard">Difícil</SelectItem>
+      </SelectContent>
+    </Select>
+    {filters.subjectId && (
+      <Select value={filters.topicId ?? "all"} onValueChange={v => onChange({ topicId: v === "all" ? undefined : v, subtopicId: undefined })}>
+        <SelectTrigger><SelectValue placeholder="Tópico" /></SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">Todos tópicos</SelectItem>
+          {topics.map((t: any) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+        </SelectContent>
+      </Select>
+    )}
+    {filters.topicId && (
+      <Select value={filters.subtopicId ?? "all"} onValueChange={v => onChange({ subtopicId: v === "all" ? undefined : v })}>
+        <SelectTrigger><SelectValue placeholder="Subtópico" /></SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">Todos subtópicos</SelectItem>
+          {subtopics.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+        </SelectContent>
+      </Select>
+    )}
+    <Select value={filters.status ?? "all"} onValueChange={v => onChange({ status: v === "all" ? undefined : v as any })}>
+      <SelectTrigger><SelectValue placeholder="Status" /></SelectTrigger>
+      <SelectContent>
+        <SelectItem value="all">Todos</SelectItem>
+        <SelectItem value="never">Nunca respondidas</SelectItem>
+        <SelectItem value="answered">Já respondidas</SelectItem>
+        <SelectItem value="correct">Acertei</SelectItem>
+        <SelectItem value="incorrect">Errei</SelectItem>
+        <SelectItem value="favorites">Favoritas</SelectItem>
+        <SelectItem value="bookmarks">Salvas</SelectItem>
+        <SelectItem value="review">Para revisar</SelectItem>
+      </SelectContent>
+    </Select>
+  </CardContent></Card>
+);
+
+const QuestionList = ({ rows, total, isLoading, onOpen, page, pageSize, onPage }: any) => (
+  <div className="space-y-2">
+    <div className="flex items-center justify-between">
+      <div className="text-xs text-muted-foreground">{total} questões</div>
+      <div className="flex gap-1">
+        <Button size="sm" variant="ghost" disabled={page === 0} onClick={() => onPage(page - 1)}>Anterior</Button>
+        <Button size="sm" variant="ghost" disabled={(page + 1) * pageSize >= total} onClick={() => onPage(page + 1)}>Próxima</Button>
       </div>
-
-      {isLoading && (
-        <div className="py-16 flex justify-center">
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-            className="h-8 w-8 rounded-full border-2 border-accent border-t-transparent"
-          />
+    </div>
+    {isLoading && <div className="py-10 text-center text-sm text-muted-foreground">Carregando…</div>}
+    {!isLoading && rows.length === 0 && (
+      <Card className="surface border-dashed border-2"><CardContent className="p-8 text-center text-sm text-muted-foreground">
+        Nenhuma questão encontrada com esses filtros.
+      </CardContent></Card>
+    )}
+    {rows.map((q: any, idx: number) => (
+      <button key={q.id} onClick={() => onOpen(q.id, idx)}
+        className="w-full text-left rounded-lg border border-border/60 bg-card hover:border-accent/50 transition p-3 flex gap-3">
+        <div className="flex-shrink-0 flex flex-col items-start gap-1">
+          {q.institution && <Badge variant="outline" className="border-accent/30 text-accent text-[10px]">{q.institution}{q.year ? ` ${q.year}` : ""}</Badge>}
+          {q.difficulty && <Badge variant="secondary" className="text-[10px]">{q.difficulty}</Badge>}
         </div>
-      )}
+        <div className="flex-1 min-w-0">
+          <div className="text-xs text-muted-foreground truncate">
+            {q.subjects?.name ?? "—"}{q.topics?.name ? ` › ${q.topics.name}` : ""}{q.subtopics?.name ? ` › ${q.subtopics.name}` : ""}
+          </div>
+          <div className="text-sm line-clamp-2 mt-0.5">{q.title || q.question_text}</div>
+        </div>
+      </button>
+    ))}
+  </div>
+);
 
-      {!isLoading && total === 0 && (
-        <Card className="surface-elevated border-dashed border-2 border-border/60">
-          <CardContent className="p-12 text-center">
-            <motion.div
-              animate={{ y: [0, -6, 0] }}
-              transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
-              className="mx-auto mb-4 h-14 w-14 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center"
-            >
-              <FileQuestion className="h-6 w-6 text-accent" />
-            </motion.div>
-            <p className="text-muted-foreground">Nenhuma questão gerada ainda. Indexe seu Drive e aguarde o processamento.</p>
-          </CardContent>
-        </Card>
-      )}
-
-      <AnimatePresence mode="wait">
-        {current && (
-          <motion.div
-            key={current.id + "-" + currentIdx}
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -12 }}
-            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <Card className="surface-elevated border-border/60">
-              <CardContent className="p-6 space-y-5">
-                <div className="flex items-center justify-between">
-                  <p className="text-[11px] uppercase font-semibold tracking-[0.2em] text-muted-foreground">
-                    Questão <span className="text-foreground font-mono tabular-nums">{currentIdx + 1}</span> de {total}
-                  </p>
-                  <Badge variant="outline" className="border-accent/30 text-accent bg-accent/5 uppercase tracking-wider text-[11px]">
-                    {current.difficulty}
-                  </Badge>
-                </div>
-
-                <p className="text-base leading-relaxed">{current.question_text}</p>
-
-                <div className="space-y-2">
-                  {options?.map((opt, i) => {
-                    const isCorrect = opt.label === current.correct_option;
-                    const isSelected = opt.label === selectedAnswer;
-                    return (
-                      <motion.button
-                        key={opt.label}
-                        initial={{ opacity: 0, x: -8 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.05 * i, duration: 0.35 }}
-                        whileHover={!showExplanation ? { x: 4 } : undefined}
-                        disabled={showExplanation}
-                        onClick={() => handleAnswer(opt.label)}
-                        className={cn(
-                          "w-full text-left rounded-lg border p-3.5 flex items-start gap-3 group",
-                          showExplanation
-                            ? isCorrect
-                              ? "border-success/60 bg-success/10"
-                              : isSelected
-                              ? "border-destructive/60 bg-destructive/10"
-                              : "border-border/60 opacity-60"
-                            : "border-border/60 hover:border-accent/50 hover:bg-accent/5"
-                        )}
-                      >
-                        <span className={cn(
-                          "h-7 w-7 shrink-0 rounded-md font-mono font-bold text-sm flex items-center justify-center border",
-                          showExplanation && isCorrect ? "border-success/60 bg-success/20 text-success"
-                          : showExplanation && isSelected ? "border-destructive/60 bg-destructive/20 text-destructive"
-                          : "border-border bg-muted text-muted-foreground group-hover:border-accent/40 group-hover:text-accent"
-                        )}>
-                          {opt.label}
-                        </span>
-                        <span className="flex-1 pt-1 text-sm">{opt.text}</span>
-                        {showExplanation && isCorrect && (
-                          <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 400 }}>
-                            <CheckCircle className="h-5 w-5 text-success" />
-                          </motion.span>
-                        )}
-                        {showExplanation && isSelected && !isCorrect && (
-                          <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 400 }}>
-                            <XCircle className="h-5 w-5 text-destructive" />
-                          </motion.span>
-                        )}
-                      </motion.button>
-                    );
-                  })}
-                </div>
-
-                <AnimatePresence>
-                  {showExplanation && current.explanation && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                      className="overflow-hidden"
-                    >
-                      <div className="rounded-lg border border-accent/20 bg-accent/5 p-4 text-sm">
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-accent mb-1.5">Explicação</p>
-                        <p className="leading-relaxed">{current.explanation}</p>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                {showExplanation && (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
-                    <Button
-                      onClick={nextQuestion}
-                      disabled={currentIdx >= total - 1}
-                      className="gradient-gold text-accent-foreground shadow-gold font-semibold hover:scale-[1.02] group"
-                    >
-                      Próxima questão
-                      <ArrowRight className="ml-1.5 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                    </Button>
-                  </motion.div>
-                )}
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
-      </AnimatePresence>
+const ExamRunner = ({ session, onAnswer, onNav, onFinish, submitting }: any) => {
+  const qid = session.qids[session.idx];
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="text-sm font-medium">Modo prova · {session.idx + 1}/{session.qids.length}</div>
+        <div className="flex gap-2">
+          <Button variant="ghost" size="sm" disabled={session.idx === 0} onClick={() => onNav(session.idx - 1)}>Anterior</Button>
+          <Button variant="ghost" size="sm" disabled={session.idx >= session.qids.length - 1} onClick={() => onNav(session.idx + 1)}>Próxima</Button>
+          <Button size="sm" className="gradient-gold text-accent-foreground" onClick={onFinish} disabled={submitting}>{submitting ? "Enviando…" : "Finalizar prova"}</Button>
+        </div>
+      </div>
+      <QuestionSolver
+        questionId={qid}
+        mode="exam"
+        hideCorrection
+        examSessionId={session.id}
+        index={session.idx}
+        total={session.qids.length}
+        onNext={() => session.idx < session.qids.length - 1 ? onNav(session.idx + 1) : undefined}
+        onPrev={() => session.idx > 0 ? onNav(session.idx - 1) : undefined}
+        onAnswered={undefined}
+      />
+      <div className="grid grid-cols-10 gap-1">
+        {session.qids.map((qq: string, i: number) => (
+          <button key={qq} onClick={() => onNav(i)} className={`h-8 rounded text-xs font-mono ${i === session.idx ? "bg-accent text-accent-foreground" : session.answers[qq] ? "bg-success/30" : "bg-muted"}`}>{i + 1}</button>
+        ))}
+      </div>
     </div>
   );
 };
