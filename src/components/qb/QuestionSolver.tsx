@@ -13,7 +13,7 @@ type Props = {
   mode?: "learning" | "exam";
   onNext?: () => void;
   onPrev?: () => void;
-  onAnswered?: (isCorrect: boolean) => void;
+  onAnswered?: (isCorrect: boolean, selected: string) => void;
   hideCorrection?: boolean; // for exam mode
   index?: number;
   total?: number;
@@ -42,7 +42,7 @@ export const QuestionSolver = ({ questionId, mode = "learning", onNext, onPrev, 
     try {
       const res: any = await record.mutateAsync({ question_id: questionId, selected: label, time_spent: timeSpent, mode, exam_session_id: examSessionId });
       if (!hideCorrection) setShowAns(true);
-      onAnswered?.(!!res?.is_correct);
+      onAnswered?.(!!res?.is_correct, label);
     } catch (e: any) {
       toast.error(e.message ?? "Falha ao registrar");
     }
